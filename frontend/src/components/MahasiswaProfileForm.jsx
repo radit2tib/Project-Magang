@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import aprilLogo from '../assets/icons/april.png';
+
+// --- [PENTING] Tentukan API_URL di sini ---
+// Gunakan URL tunnel publik port 8000 Anda
+const API_URL = 'https://q576mhww-8000.asse.devtunnels.ms'; 
+// (Pastikan URL ini sama dengan yang ada di VS Code "PORTS" Anda)
+
 
 const MahasiswaProfileForm = () => {
     const [formData, setFormData] = useState({
@@ -22,9 +28,11 @@ const MahasiswaProfileForm = () => {
         const fetchCurrentData = async () => {
             try {
                 const token = localStorage.getItem('mahasiswaAuthToken');
-                const response = await axios.get('http://localhost:8000/mahasiswa/profile', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                
+                // --- [PERBAIKAN 1] Menggunakan API_URL ---
+                const response = await axios.get(`${API_URL}/mahasiswa/profile`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
                 const data = response.data;
                 setFormData({
                     bu: data.bu || '',
@@ -59,9 +67,11 @@ const MahasiswaProfileForm = () => {
         setSuccess('');
         try {
             const token = localStorage.getItem('mahasiswaAuthToken');
-            await axios.post('http://localhost:8000/mahasiswa/profile', formData, { 
-                headers: { Authorization: `Bearer ${token}` }
-            })
+            
+            // --- [PERBAIKAN 2] Menggunakan API_URL dan method PUT ---
+            await axios.put(`${API_URL}/mahasiswa/profile`, formData, { 
+                headers: { Authorization: `Bearer ${token}` }
+            })
             setSuccess('Profil berhasil diperbarui!');
             setTimeout(() => navigate('/mahasiswa/dashboard'), 1500);
         } catch (err) {
@@ -140,4 +150,3 @@ const MahasiswaProfileForm = () => {
 };
 
 export default MahasiswaProfileForm;
-

@@ -3,6 +3,12 @@ import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom'; // Import Link
 import aprilLogo from '../assets/icons/april.png';
 
+// --- [PENTING] Tentukan API_URL di sini ---
+// Gunakan URL tunnel publik port 8000 Anda
+const API_URL = 'https://q576mhww-8000.asse.devtunnels.ms'; 
+// (Pastikan URL ini sama dengan yang ada di VS Code "PORTS" Anda)
+
+
 const MahasiswaLogin = () => {
     const [nim, setNim] = useState('');
     const [password, setPassword] = useState('');
@@ -16,8 +22,8 @@ const MahasiswaLogin = () => {
         setError('');
 
         try {
-            // 1. Mengirim data NIM dan password ke backend
-            const response = await axios.post('http://localhost:8000/login/mahasiswa', {
+            // 1. [PERBAIKAN] Mengirim data ke URL tunnel, bukan localhost
+            const response = await axios.post(`${API_URL}/login/mahasiswa`, {
                 nim,
                 password,
             });

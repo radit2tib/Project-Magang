@@ -3,6 +3,11 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import aprilLogo from '../assets/icons/april.png';
 
+// --- [PENTING] Tentukan API_URL di sini ---
+// Gunakan URL tunnel publik port 8000 Anda
+const API_URL = 'https://q576mhww-8000.asse.devtunnels.ms'; 
+// (Pastikan URL ini sama dengan yang ada di VS Code "PORTS" Anda)
+
 // Komponen Ikon SVG untuk digunakan kembali
 const Icon = ({ path, className = "w-5 h-5" }) => (
     <svg className={className} fill="currentColor" viewBox="0 0 20 20">
@@ -23,7 +28,8 @@ const AdminLogin = () => {
         setError('');
 
         try {
-            const response = await axios.post('http://localhost:8000/login/admin', {
+            // --- [PERBAIKAN] Menggunakan API_URL dinamis ---
+            const response = await axios.post(`${API_URL}/login/admin`, {
                 email,
                 password,
             });
@@ -103,11 +109,10 @@ const AdminLogin = () => {
                 </div>
                  <p className="text-center text-gray-400 text-sm mt-8">
                     © {new Date().getFullYear()} APRIL Group. All rights reserved.
-                </p>
+                 </p>
             </div>
         </div>
     );
 };
 
 export default AdminLogin;
-

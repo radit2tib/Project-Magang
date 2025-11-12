@@ -11,15 +11,32 @@ dotenv.config();
 
 const app = express();
 
-// --- KONFIGURASI CORS EKSPLISIT ---
-// Ini memberi tahu server untuk secara spesifik mengizinkan
-// permintaan dari alamat frontend Anda.
+// --- [PERBAIKAN] KONFIGURASI CORS ---
+
+// 1. Buat daftar semua alamat frontend yang diizinkan
+const allowedOrigins = [
+  'http://localhost:5173', // Alamat dev lokal Anda
+  'https://q576mhww-5173.asse.devtunnels.ms', 
+  'https://q576mhww-8000.asse.devtunnels.ms'// Alamat dev tunnel dari error
+];
+
+// 2. Ubah 'origin' dari string menjadi fungsi dinamis
 const corsOptions = {
-  origin: 'http://localhost:5173', // Pastikan port ini sesuai dengan port frontend Anda
+  origin: function (origin, callback) {
+    // Izinkan jika:
+    // 1. Origin ada di dalam 'allowedOrigins'
+    // 2. Tidak ada origin (misal: Postman atau server-to-server)
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Alamat ini tidak diizinkan oleh CORS'));
+    }
+  },
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true,
   optionsSuccessStatus: 200 
 };
+// --- Akhir Perbaikan ---
 
 app.use(cors(corsOptions));
 app.use(express.json());

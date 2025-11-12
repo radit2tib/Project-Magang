@@ -44,7 +44,7 @@ router.get('/test', (req, res) => {
 router.get('/profile', verifyToken, getMahasiswaProfile);
 
 // Rute untuk memperbarui profil mahasiswa yang sedang login
-router.post('/profile', verifyToken, updateMahasiswaProfile);
+router.put('/profile', verifyToken, updateMahasiswaProfile);
 
 
 export default router;

@@ -1,18 +1,50 @@
-// Ini adalah file BARU: src/components/KptaPage.jsx
-// Isinya adalah SEMUA logika yang sebelumnya ada di Dashboard.jsx
+// File: src/components/KptaPage.jsx
 
-// --- 1. IMPORT useMemo ---
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 
-// Komponen Ikon SVG (Sama persis)
+// Komponen Ikon SVG
 const Icon = ({ path, className = "w-6 h-6" }) => (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24" xmlns="http://www.w3.org/2000/svg">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={path}></path>
     </svg>
 );
 
-// Komponen Header Konten Utama (Sama persis)
+// --- [BARU] Komponen Tombol Download File ---
+// Komponen ini akan menampilkan tombol download jika ada filePath,
+// atau tanda strip (-) jika tidak ada.
+const FileDownloadButton = ({ filePath, apiUrl }) => {
+    // Jika tidak ada file, tampilkan strip
+    if (!filePath || filePath === '-') {
+        return <span className="text-slate-500">-</span>;
+    }
+
+    // Menggabungkan URL server dengan path file
+    // Hati-hati dengan tanda slash (/) ganda
+    const cleanApiUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+    const cleanFilePath = filePath.startsWith('/') ? filePath.slice(1) : filePath;
+    const downloadUrl = `${cleanApiUrl}/${cleanFilePath}`;
+
+    return (
+        <a
+            href={downloadUrl}
+            target="_blank" // Buka di tab baru
+            rel="noopener noreferrer" // Keamanan
+            title={`Lihat File`}
+            className="
+                inline-flex items-center justify-center p-2 
+                text-blue-600 hover:bg-blue-100 rounded-full 
+                transition-colors duration-150
+            "
+        >
+            {/* Ikon lingkaran-panah-bawah */}
+            <Icon path="M12 10v6m0 0l-3-3m3 3l3-3m2.25-1.5a9 9 0 11-18 0 9 9 0 0118 0z" className="w-5 h-5" />
+        </a>
+    );
+};
+
+
+// Komponen Header Konten Utama
 const DashboardHeader = ({ onAddDocument }) => (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 border-b border-slate-200 pb-6">
         <div>
@@ -34,8 +66,8 @@ const DashboardHeader = ({ onAddDocument }) => (
     </div>
 );
 
-// Komponen Tabel (HANYA MENAMPILKAN DATA KP/TA) - (Sama persis)
-const DocumentsTable = ({ documents, onEdit, onDelete }) => (
+// --- Komponen Tabel ---
+const DocumentsTable = ({ documents, onEdit, onDelete, apiUrl }) => (
     <div className="overflow-x-auto bg-white rounded-lg shadow-sm">
         <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
@@ -47,6 +79,9 @@ const DocumentsTable = ({ documents, onEdit, onDelete }) => (
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Dept</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Judul KP</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Judul TA</th>
+                    {/* --- [BARU] Kolom Header File --- */}
+                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">File KP</th>
+                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">File TA</th>
                     <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">Aksi</th>
                 </tr>
             </thead>
@@ -60,6 +95,16 @@ const DocumentsTable = ({ documents, onEdit, onDelete }) => (
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{doc.dept || '-'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 truncate max-w-xs">{doc.judulKp || '-'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 truncate max-w-xs">{doc.judulTa || '-'}</td>
+
+                        {/* --- [BARU] Sel Data File --- */}
+                        {/* Pastikan 'doc.fileKp' dan 'doc.fileTa' ada di data Anda */}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                            <FileDownloadButton filePath={doc.fileKp} apiUrl={apiUrl} />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                            <FileDownloadButton filePath={doc.fileTa} apiUrl={apiUrl} />
+                        </td>
+
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex items-center justify-center space-x-2">
                                 <button onClick={() => onEdit(doc)} className="p-2 text-yellow-500 hover:bg-yellow-100 rounded-full transition-colors duration-150" title="Edit">
@@ -73,7 +118,8 @@ const DocumentsTable = ({ documents, onEdit, onDelete }) => (
                     </tr>
                 )) : (
                     <tr>
-                        <td colSpan="8" className="text-center py-10 text-slate-500">
+                        {/* --- [MODIFIKASI] colSpan diubah ke 10 --- */}
+                        <td colSpan="10" className="text-center py-10 text-slate-500">
                             Tidak ada data yang ditemukan.
                         </td>
                     </tr>
@@ -83,7 +129,7 @@ const DocumentsTable = ({ documents, onEdit, onDelete }) => (
     </div>
 );
 
-// Komponen Form/Modal (HANYA UNTUK KP/TA) - (Sama persis)
+// Komponen Form/Modal
 const DocumentForm = ({ document, onClose, onSave }) => {
     const [formData, setFormData] = useState({
         nim: '',
@@ -179,7 +225,7 @@ const DocumentForm = ({ document, onClose, onSave }) => {
     );
 };
 
-// --- 5. MODIFIKASI TableControls ---
+// --- Komponen Kontrol Tabel ---
 const TableControls = React.memo(({
     entriesPerPage, setEntriesPerPage,
     searchTerm, setSearchTerm,
@@ -206,7 +252,6 @@ const TableControls = React.memo(({
         {/* Bungkus semua filter kanan */}
         <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
 
-            {/* TAMBAHKAN DROPDOWN BU BARU */}
             <select
                 value={selectedBu}
                 onChange={(e) => setSelectedBu(e.target.value)}
@@ -218,7 +263,6 @@ const TableControls = React.memo(({
                 ))}
             </select>
 
-            {/* TAMBAHKAN DROPDOWN ANGKATAN BARU */}
             <select
                 value={selectedAngkatan}
                 onChange={(e) => setSelectedAngkatan(e.target.value)}
@@ -230,7 +274,6 @@ const TableControls = React.memo(({
                 ))}
             </select>
 
-            {/* Search Bar (yang sudah ada) */}
             <div className="relative w-full sm:w-auto">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3">
                     <Icon path="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" className="w-5 h-5 text-slate-400" />
@@ -247,7 +290,7 @@ const TableControls = React.memo(({
     </div>
 ));
 
-// Komponen Pagination (Sama persis)
+// Komponen Pagination
 const Pagination = ({ currentPage, totalPages, onPageChange, totalEntries, entriesPerPage, indexOfFirstEntry, indexOfLastEntry }) => {
     if (totalPages <= 1) return null;
 
@@ -278,9 +321,8 @@ const Pagination = ({ currentPage, totalPages, onPageChange, totalEntries, entri
     );
 };
 
-// Komponen Modal Konfirmasi Hapus (Sama persis)
+// Komponen Modal Konfirmasi Hapus
 const ConfirmModal = ({ isOpen, onClose, onConfirm, nim }) => {
-// ... (kodenya sama persis)
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 animate-fade-in">
@@ -291,10 +333,8 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, nim }) => {
                     </div>
                     <div className="ml-4 text-left">
                         <h3 className="text-lg leading-6 font-bold text-slate-800">Hapus Dokumen</h3>
-                        {/* 's' dihapus dari baris di bawah ini */}
                         <div className="mt-2">
                             <p className="text-sm text-slate-600">
-                                {/* '_' dihapus dari baris di bawah ini */}
                                 Apakah Anda yakin ingin menghapus data mahasiswa dengan NIM <span className="font-bold text-red-700">{nim}</span>?
                             </p>
                             <p className="text-sm text-slate-500 mt-1">Tindakan ini tidak dapat dibatalkan.</p>
@@ -325,13 +365,11 @@ const KptaPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [deletingNim, setDeletingNim] = useState(null);
-
-    // --- 2. TAMBAHKAN STATE FILTER ---
-    const [selectedBu, setSelectedBu] = useState(''); // '' berarti 'Semua BU'
-    const [selectedAngkatan, setSelectedAngkatan] = useState(''); // '' berarti 'Semua Angkatan'
+    const [selectedBu, setSelectedBu] = useState('');
+    const [selectedAngkatan, setSelectedAngkatan] = useState('');
 
 
-    const API_URL = 'http://localhost:8000';
+    const API_URL = 'https://q576mhww-8000.asse.devtunnels.ms';
 
     const fetchDocuments = async () => {
         try {
@@ -340,10 +378,13 @@ const KptaPage = () => {
                 console.error("Admin tidak terautentikasi.");
                 return;
             }
-            // API call ini MENGAMBIL SEMUA data, tapi tabel kita HANYA menampilkan data KP/TA
             const response = await axios.get(`${API_URL}/mahasiswa`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            // --- Asumsi data dari API ---
+            // Pastikan response.data adalah array dan setiap objek 
+            // memiliki properti 'fileKp' dan 'fileTa'
+            // Contoh: response.data = [ { nim: '123', ..., fileKp: 'uploads/kp/123.pdf', fileTa: null } ]
             setDocuments(response.data);
         } catch (error) {
             console.error("Gagal mengambil data mahasiswa:", error.response ? error.response.data : error.message);
@@ -356,10 +397,8 @@ const KptaPage = () => {
 
     useEffect(() => {
         setCurrentPage(1);
-        // --- 3. TAMBAHKAN DEPENDENCY FILTER ---
     }, [searchTerm, entriesPerPage, selectedBu, selectedAngkatan]);
 
-    // --- 4. TAMBAHKAN useMemo UNTUK OPSI DROPDOWN ---
     const uniqueBuOptions = useMemo(() => {
         const bus = new Set(documents.map(m => m.bu).filter(Boolean));
         return [...bus].sort();
@@ -414,15 +453,10 @@ const KptaPage = () => {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
             } else {
-                // Catatan: Form "Tambah Dokumen" di halaman ini TIDAK
-                // memiliki field password, jadi 'createMahasiswa'
-                // mungkin gagal jika password 'required' di backend.
-                // Sebaiknya tombol "Tambah" hanya ada di halaman Data.
-                // Tapi kita ikuti alur yang ada.
                 await axios.post(`${API_URL}/mahasiswa`, formData, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-            } {/* '_' dihapus dari sebelum kurung kurawal ini */}
+            }
             handleCloseModal();
             fetchDocuments();
         } catch (error) {
@@ -430,15 +464,11 @@ const KptaPage = () => {
         }
     };
 
-    // --- 4. MODIFIKASI LOGIKA FILTER ---
     const filteredDocuments = documents.filter(doc => {
         const searchMatch = (doc.nama?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
             (doc.nim?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-
         const buMatch = selectedBu ? doc.bu === selectedBu : true;
-
         const angkatanMatch = selectedAngkatan ? doc.angkatan.toString() === selectedAngkatan : true;
-
         return searchMatch && buMatch && angkatanMatch;
     });
 
@@ -447,21 +477,17 @@ const KptaPage = () => {
     const currentDocuments = filteredDocuments.slice(indexOfFirstEntry, indexOfLastEntry);
     const totalPages = Math.ceil(filteredDocuments.length / entriesPerPage);
 
-    // Ini adalah JSX yang akan dirender
     return (
         <div className="animate-fade-in">
             <DashboardHeader onAddDocument={handleAddDocument} />
             <div className="bg-white rounded-lg shadow-sm p-4">
 
-                {/* --- 6. UPDATE PROPS TableControls --- */}
                 <TableControls
                     entriesPerPage={entriesPerPage}
                     setEntriesPerPage={setEntriesPerPage}
                     searchTerm={searchTerm}
                     setSearchTerm={setSearchTerm}
                     totalEntries={documents.length}
-
-                    // Tambahkan props baru
                     selectedBu={selectedBu}
                     setSelectedBu={setSelectedBu}
                     buOptions={uniqueBuOptions}
@@ -469,11 +495,14 @@ const KptaPage = () => {
                     setSelectedAngkatan={setSelectedAngkatan}
                     angkatanOptions={uniqueAngkatanOptions}
                 />
+                
                 <DocumentsTable
                     documents={currentDocuments}
                     onEdit={handleEditDocument}
                     onDelete={handleDeleteDocument}
+                    apiUrl={API_URL} 
                 />
+                
                 <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
@@ -500,7 +529,6 @@ const KptaPage = () => {
                     setDeletingNim(null);
                 }}
                 onConfirm={handleConfirmDelete}
-
                 nim={deletingNim}
             />
         </div>
@@ -508,4 +536,3 @@ const KptaPage = () => {
 };
 
 export default KptaPage;
-

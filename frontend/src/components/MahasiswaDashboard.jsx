@@ -3,6 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import aprilLogo from '../assets/icons/april.png'; // Path ini menyebabkan error, diganti placeholder
 
+// --- [PENTING] Tentukan API_URL di sini ---
+// Gunakan URL tunnel publik port 8000 Anda
+const API_URL = 'https://q576mhww-8000.asse.devtunnels.ms'; 
+// (Pastikan URL ini sama dengan yang ada di VS Code "PORTS" Anda)
+
 
 // --- Komponen Ikon SVG ---
 const Icon = ({ path, className = "" }) => (
@@ -343,7 +348,7 @@ const TugasItem = ({ taskNumber }) => {
             // --- AKHIR SIMULASI ---
 
             /* // --- CONTOH API CALL SUNGGUHAN (Ganti URL-nya nanti) ---
-            await axios.post('http://localhost:8000/mahasiswa/tugas', formData, {
+            await axios.post(`${API_URL}/mahasiswa/tugas`, formData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data' // Penting untuk file upload
@@ -438,8 +443,8 @@ const TugasView = ({ user, navigate }) => {
     return (
         <div className="animate-fade-in">
             {/* Catatan: Header (judul "Tugas" dan deskripsi) 
-              sekarang ada di komponen header utama, 
-              jadi di sini kita langsung tampilkan daftar tugasnya.
+             sekarang ada di komponen header utama, 
+             jadi di sini kita langsung tampilkan daftar tugasnya.
             */}
             
             {/* Kita buat grid agar rapi di layar besar */}
@@ -479,7 +484,8 @@ const MahasiswaDashboard = () => {
                 return;
             }
             try {
-                const response = await axios.get('http://localhost:8000/mahasiswa/profile', {
+                // --- [PERBAIKAN] Menggunakan API_URL ---
+                const response = await axios.get(`${API_URL}/mahasiswa/profile`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 setUser(response.data);
@@ -496,7 +502,7 @@ const MahasiswaDashboard = () => {
         // --- FETCH BARU UNTUK SEMUA JUDUL (MENGGUNAKAN MOCK DATA) ---
         const fetchAllTitles = () => {
             // Nanti, Anda akan mengganti ini dengan API call sungguhan ke backend
-            // const response = await axios.get('http://localhost:8000/mahasiswa/all-titles', { ... });
+            // const response = await axios.get(`${API_URL}/mahasiswa/all-titles`, { ... });
             // setAllTitles(response.data);
 
             // Mock data untuk sekarang:
@@ -536,15 +542,15 @@ const MahasiswaDashboard = () => {
                          {/* Header dinamis berdasarkan menu aktif */}
                          <h1 className="text-2xl font-bold text-slate-800">{menuTitles[activeMenu]}</h1>
                      </div>
-                      <div className="flex items-center">
-                          <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg">
-                              {user?.nama?.charAt(0)}
-                          </div>
-                          <div className="ml-3 text-left">
-                              <p className="font-semibold text-slate-700 text-sm truncate max-w-[150px]">{user?.nama}</p>
-                              <p className="text-xs text-slate-500">{user?.nim}</p>
-                          </div>
-                      </div>
+                     <div className="flex items-center">
+                         <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg">
+                             {user?.nama?.charAt(0)}
+                         </div>
+                         <div className="ml-3 text-left">
+                             <p className="font-semibold text-slate-700 text-sm truncate max-w-[150px]">{user?.nama}</p>
+                             <p className="text-xs text-slate-500">{user?.nim}</p>
+                         </div>
+                     </div>
                  </header>
                  {/* Latar belakang main content diubah agar lebih kontras dengan kartu */}
                  <div className="p-6 md:p-8 bg-slate-100"> 
@@ -561,4 +567,3 @@ const MahasiswaDashboard = () => {
 };
 
 export default MahasiswaDashboard;
-

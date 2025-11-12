@@ -3,6 +3,7 @@ import axios from "axios";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
+// --- Komponen Ikon ---
 const Icon = ({ path, className = "w-6 h-6" }) => (
   <svg
     className={className}
@@ -14,6 +15,53 @@ const Icon = ({ path, className = "w-6 h-6" }) => (
   </svg>
 );
 
+// --- Helper Form (dipindah ke luar) ---
+const FormInput = ({ label, name, value, onChange, ...props }) => (
+  <div>
+    <label htmlFor={name} className="block text-sm font-medium text-slate-700">{label}</label>
+    <input 
+      id={name} 
+      name={name} 
+      value={value || ''} 
+      onChange={onChange}
+      className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+      {...props} 
+    />
+  </div>
+);
+
+const FormTextArea = ({ label, name, value, onChange, ...props }) => (
+  <div> 
+    <label htmlFor={name} className="block text-sm font-medium text-slate-700">{label}</label>
+    <textarea 
+      id={name} 
+      name={name} 
+      value={value || ''} 
+      onChange={onChange}
+      className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+      rows="2"
+      {...props} 
+    />
+  </div>
+);
+
+const FormSelect = ({ label, name, value, onChange, children, ...props }) => (
+   <div>
+    <label htmlFor={name} className="block text-sm font-medium text-slate-700">{label}</label>
+    <select
+      id={name} 
+      name={name} 
+      value={value === null || value === undefined ? '' : value}
+      onChange={onChange}
+      className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+      {...props} 
+    >
+      {children}
+    </select>
+  </div>
+);
+
+// --- Komponen Header ---
 const DataHeader = ({ onAddData, onDownloadData }) => (
   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 border-b border-slate-200 pb-6">
     <div>
@@ -51,7 +99,8 @@ const DataHeader = ({ onAddData, onDownloadData }) => (
   </div>
 );
 
-const DataTable = ({ documents, onEdit, onDelete }) => (
+// --- Komponen Tabel Data (Dengan Tombol Info) ---
+const DataTable = ({ documents, onInfo, onEdit, onDelete }) => (
   <div className="overflow-x-auto bg-white rounded-lg shadow-sm">
     <table className="min-w-full divide-y divide-slate-200">
       <thead className="bg-slate-50">
@@ -90,10 +139,20 @@ const DataTable = ({ documents, onEdit, onDelete }) => (
               <td className="px-4 py-3 text-sm text-slate-500">{doc.scholar || "-"}</td>
               <td className="px-4 py-3 text-sm text-slate-500">{doc.jenisKelamin || "-"}</td>
               <td className="px-4 py-3 text-sm text-slate-500">{doc.english || "-"}</td>
-              <td className="px-4 py-3 text-sm text-slate-500">{doc.pakaiKacamata || "-"}</td>
+              <td className="px-4 py-3 text-sm text-slate-500">{doc.pakaiKacamata ? 'Ya' : 'Tidak' }</td>
               <td className="px-4 py-3 text-sm text-slate-500">{doc.riwayatPenyakit || "-"}</td>
               <td className="px-4 py-3 text-center">
                 <div className="flex justify-center space-x-2">
+                  <button
+                    onClick={() => onInfo(doc)}
+                    className="p-2 text-blue-500 hover:bg-blue-100 rounded-full transition-colors duration-150"
+                    title="Lihat Detail"
+                  >
+                    <Icon
+                      path="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      className="w-5 h-5"
+                    />
+                  </button>
                   <button
                     onClick={() => onEdit(doc)}
                     className="p-2 text-yellow-500 hover:bg-yellow-100 rounded-full transition-colors duration-150"
@@ -105,7 +164,7 @@ const DataTable = ({ documents, onEdit, onDelete }) => (
                     />
                   </button>
                   <button
-                    onClick={() => onDelete(doc.nim)}
+                    onClick={() => onDelete(doc)}
                     className="p-2 text-red-500 hover:bg-red-100 rounded-full transition-colors duration-150"
                     title="Hapus"
                   >
@@ -130,6 +189,7 @@ const DataTable = ({ documents, onEdit, onDelete }) => (
   </div>
 );
 
+// --- Komponen Kontrol Tabel ---
 const TableControls = ({
   entriesPerPage, setEntriesPerPage,
   searchTerm, setSearchTerm,
@@ -195,6 +255,307 @@ const TableControls = ({
   </div>
 );
 
+
+// --- Komponen Info Modal ---
+const InfoModal = ({ isOpen, onClose, mahasiswa }) => {
+  if (!isOpen || !mahasiswa) {
+    return null;
+  }
+  const renderField = (label, value) => {
+    const displayValue = value || "-";
+    return (
+      <div className="grid grid-cols-3 gap-2 py-2.5 border-b border-slate-100">
+        <dt className="text-sm font-medium text-slate-500">{label}</dt>
+        <dd className="text-sm text-slate-900 col-span-2">{displayValue}</dd>
+      </div>
+    );
+  };
+  return (
+    <div className="fixed inset-0 z-50 flex justify-center items-center p-4 transition-opacity duration-300">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="flex justify-between items-center p-5 border-b border-slate-200 sticky top-0 bg-white">
+          <h3 className="text-xl font-semibold text-slate-800">
+            Detail Informasi Mahasiswa
+          </h3>
+          <button 
+            onClick={onClose} 
+            className="p-2 text-slate-400 hover:text-slate-600 rounded-full transition-colors"
+          >
+            <Icon path="M6 18L18 6M6 6l12 12" className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-6 space-y-4 overflow-y-auto">
+          <dl>
+            {renderField("Nama Lengkap", mahasiswa.nama)}
+            {renderField("NIM", mahasiswa.nim)}
+            {renderField("Password", mahasiswa.password)} 
+            {renderField("Angkatan", mahasiswa.angkatan)}
+            {renderField("Business Unit (BU)", mahasiswa.bu)}
+            {renderField("Departemen", mahasiswa.dept)}
+            {renderField("Jenis Kelamin", mahasiswa.jenisKelamin)}
+            {renderField("Scholar", mahasiswa.scholar)}
+            {renderField("English", mahasiswa.english)}
+            {renderField("Mentor", mahasiswa.mentor)}
+            {renderField("Co-Mentor", mahasiswa.co_mentor)}
+            {renderField("Judul KP", mahasiswa.judulKp)}
+            {renderField("Judul TA", mahasiswa.judulTa)}
+            {renderField("Pakai Kacamata", mahasiswa.pakaiKacamata ? 'Ya' : 'Tidak')}
+            {renderField("Riwayat Penyakit", mahasiswa.riwayatPenyakit)}
+            {renderField("Profil Lengkap", mahasiswa.isProfileComplete ? 'Ya' : 'Belum')}
+          </dl>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- KOMPONEN EDIT MODAL ---
+const EditModal = ({ isOpen, onClose, onSave, mahasiswa }) => {
+  const [formData, setFormData] = useState(null);
+  
+  // --- [BARU] State untuk tombol mata ---
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (mahasiswa) {
+      setFormData({
+        ...mahasiswa,
+        newPassword: "" 
+      });
+      // Reset state mata setiap modal dibuka
+      setShowPassword(false); 
+    } else {
+      setFormData(null);
+    }
+  }, [mahasiswa, isOpen]); 
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    
+    if (type === "checkbox") {
+       setFormData(prev => ({ ...prev, [name]: checked }));
+    } else if (type === "select-one") {
+      const boolValue = value === "true" ? true : (value === "false" ? false : value);
+      setFormData(prev => ({ ...prev, [name]: boolValue }));
+    } else {
+       setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+  
+  // --- [BARU] Fungsi untuk toggle mata ---
+  const togglePasswordVisibility = () => {
+    setShowPassword(prev => !prev);
+  };
+
+  if (!isOpen || !formData) {
+    return null;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-center items-center p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex justify-between items-center p-5 border-b border-slate-200">
+          <h3 className="text-xl font-semibold text-slate-800">
+            Edit Mahasiswa: {mahasiswa.nama}
+          </h3>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 rounded-full">
+            <Icon path="M6 18L18 6M6 6l12 12" className="w-5 h-5" />
+          </button>
+        </div>
+        
+        {/* Form Body dengan Fieldset */}
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto">
+          
+          <fieldset className="mb-6">
+            <legend className="text-base font-semibold text-slate-900 mb-3 border-b border-slate-200 pb-2 w-full">Informasi Utama</legend>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+              <FormInput 
+                label="NIM" 
+                name="nim" 
+                value={formData.nim} 
+                onChange={handleChange} 
+                disabled 
+                className="bg-slate-100" 
+              />
+              <FormInput 
+                label="Nama Lengkap" 
+                name="nama" 
+                value={formData.nama} 
+                onChange={handleChange} 
+                required 
+              />
+              <FormInput 
+                label="Angkatan" 
+                name="angkatan" 
+                type="number" 
+                value={formData.angkatan} 
+                onChange={handleChange} 
+                required 
+              />
+              <FormSelect 
+                label="Jenis Kelamin" 
+                name="jenisKelamin" 
+                value={formData.jenisKelamin} 
+                onChange={handleChange}
+              >
+                <option value="">Pilih...</option>
+                <option value="laki-laki">Laki-laki</option>
+                <option value="perempuan">Perempuan</option>
+              </FormSelect>
+            </div>
+          </fieldset>
+
+          <fieldset className="mb-6">
+            <legend className="text-base font-semibold text-slate-900 mb-3 border-b border-slate-200 pb-2 w-full">Informasi Perusahaan</legend>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+              <FormInput label="Business Unit (BU)" name="bu" value={formData.bu} onChange={handleChange} />
+              <FormInput label="Departemen" name="dept" value={formData.dept} onChange={handleChange} />
+              <FormInput label="Mentor" name="mentor" value={formData.mentor} onChange={handleChange} />
+              <FormInput label="Co-Mentor" name="co_mentor" value={formData.co_mentor} onChange={handleChange} />
+            </div>
+          </fieldset>
+          
+          <fieldset className="mb-6">
+            <legend className="text-base font-semibold text-slate-900 mb-3 border-b border-slate-200 pb-2 w-full">Informasi Tambahan</legend>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+              <FormInput label="Scholar" name="scholar" value={formData.scholar} onChange={handleChange} />
+              <FormInput label="English" name="english" value={formData.english} onChange={handleChange} />
+              <FormSelect label="Pakai Kacamata" name="pakaiKacamata" value={formData.pakaiKacamata} onChange={handleChange}>
+                <option value="">Pilih...</option>
+                <option value={true}>Ya</option>
+                <option value={false}>Tidak</option>
+              </FormSelect>
+              <FormInput label="Riwayat Penyakit" name="riwayatPenyakit" value={formData.riwayatPenyakit} onChange={handleChange} />
+              <FormSelect label="Profil Lengkap" name="isProfileComplete" value={formData.isProfileComplete} onChange={handleChange}>
+                <option value="">Pilih...</option>
+                <option value={true}>Ya</option>
+                <option value={false}>Belum</option>
+              </FormSelect>
+            </div>
+          </fieldset>
+
+          <fieldset className="mb-6">
+            <legend className="text-base font-semibold text-slate-900 mb-3 border-b border-slate-200 pb-2 w-full">Proyek Akhir</legend>
+            <div className="grid grid-cols-1 gap-y-4">
+              <FormTextArea label="Judul KP" name="judulKp" value={formData.judulKp} onChange={handleChange} />
+              <FormTextArea label="Judul TA" name="judulTa" value={formData.judulTa} onChange={handleChange} />
+            </div>
+          </fieldset>
+          
+          <fieldset>
+            <legend className="text-base font-semibold text-slate-900 mb-3 border-b border-slate-200 pb-2 w-full">Keamanan</legend>
+            <p className="text-sm text-slate-500 mb-2">Isi hanya jika Anda ingin mengubah password mahasiswa ini.</p>
+            
+            {/* --- [MODIFIKASI] Mengganti FormInput dengan JSX Khusus --- */}
+            <div>
+              <label htmlFor="newPassword" className="block text-sm font-medium text-slate-700">
+                Password Baru
+              </label>
+              <div className="relative mt-1">
+                <input 
+                  id="newPassword" 
+                  name="newPassword" 
+                  type={showPassword ? "text" : "password"} // Dinamis
+                  value={formData.newPassword || ''} 
+                  onChange={handleChange}
+                  className="block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 pr-10" // Tambah pr-10
+                  placeholder="Biarkan kosong jika tidak berubah"
+                />
+                <button 
+                  type="button" 
+                  onClick={togglePasswordVisibility}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 hover:text-slate-700"
+                  title={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                >
+                  {/* Ikon berubah berdasarkan state */}
+                  {showPassword ? (
+                    <Icon path="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-1.29-1.29m-2.755 0l-1.29 1.29M6 12s2.239-2.33 4.5-2.33m2.33 0c.343 0 .68.025 1.013.07M17.25 12a9.97 9.97 0 00-1.563-3.029m-1.75 2.122l1.29-1.29" className="w-5 h-5" />
+                  ) : (
+                    <Icon path="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178zM15 12a3 3 0 11-6 0 3 3 0 016 0z" className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+            </div>
+            {/* --- Akhir Modifikasi --- */}
+
+          </fieldset>
+          
+          {/* Footer Tombol */}
+          <div className="mt-8 flex justify-end space-x-4 border-t pt-6">
+            <button type="button" onClick={onClose} className="px-5 py-2.5 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200">
+              Batal
+            </button>
+            <button type="submit" className="px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700">
+              Simpan Perubahan
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+
+// --- KOMPONEN MODAL KONFIRMASI HAPUS ---
+const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, mahasiswa }) => {
+  if (!isOpen || !mahasiswa) {
+    return null;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-center items-center p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+        <div className="p-6">
+          <div className="flex items-start">
+            <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0">
+              <Icon path="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" className="h-6 w-6 text-red-600" />
+            </div>
+            <div className="ml-4 text-left">
+              <h3 className="text-lg leading-6 font-bold text-slate-900">
+                Hapus Mahasiswa
+              </h3>
+              <div className="mt-2">
+                <p className="text-sm text-slate-600">
+                  Apakah Anda yakin ingin menghapus data
+                  <strong className="text-slate-800"> {mahasiswa.nama}</strong>
+                  <span className="font-mono text-slate-500"> ({mahasiswa.nim})</span>?
+                </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Tindakan ini tidak dapat dibatalkan.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="bg-slate-50 px-6 py-4 flex justify-end space-x-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 bg-white text-slate-700 font-medium rounded-md border border-slate-300 hover:bg-slate-50"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="px-4 py-2 bg-red-600 text-white font-medium rounded-md shadow-sm hover:bg-red-700"
+          >
+            Ya, Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+// --- Komponen Utama Halaman ---
 const DataPage = () => {
   const [dataMahasiswa, setDataMahasiswa] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -203,20 +564,30 @@ const DataPage = () => {
   const [selectedBu, setSelectedBu] = useState("");
   const [selectedAngkatan, setSelectedAngkatan] = useState("");
 
-  const API_URL = "http://localhost:8000";
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [selectedMahasiswa, setSelectedMahasiswa] = useState(null);
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingMahasiswa, setEditingMahasiswa] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingMahasiswa, setDeletingMahasiswa] = useState(null);
+  
+  const API_URL = "https://q576mhww-8000.asse.devtunnels.ms";
+  
+
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem("adminAuthToken");
+      const response = await axios.get(`${API_URL}/mahasiswa`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setDataMahasiswa(response.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem("adminAuthToken");
-        const response = await axios.get(`${API_URL}/mahasiswa`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setDataMahasiswa(response.data);
-      } catch (err) {
-        console.error(err);
-      }
-    };
     fetchData();
   }, []);
 
@@ -254,49 +625,23 @@ const DataPage = () => {
       alert("Tidak ada data untuk diunduh berdasarkan filter saat ini.");
       return;
     }
-
     const buLabel = selectedBu ? selectedBu.toUpperCase() : "SEMUA_BU";
     const angkatanLabel = selectedAngkatan || "SEMUA_TAHUN";
     const fileTitle = `Data Mahasiswa ${buLabel} ${angkatanLabel}`;
     const fileName = `Data_Mahasiswa_${buLabel}_${angkatanLabel}.xlsx`;
-
     const wsData = [
       [fileTitle],
       [],
-      [
-        "NIM",
-        "Nama",
-        "Angkatan",
-        "BU",
-        "Scholar",
-        "Jenis Kelamin",
-        "English",
-        "Pakai Kacamata",
-        "Riwayat Penyakit",
-      ],
-      ...filteredData.map((doc) => [
-        doc.nim || "",
-        doc.nama || "",
-        doc.angkatan || "",
-        doc.bu || "",
-        doc.scholar || "",
-        doc.jenisKelamin || "",
-        doc.english || "",
-        doc.pakaiKacamata || "",
-        doc.riwayatPenyakit || "",
-      ]),
+      [ "NIM", "Nama", "Angkatan", "BU", "Scholar", "Jenis Kelamin", "English", "Pakai Kacamata", "Riwayat Penyakit", ],
+      ...filteredData.map((doc) => [ doc.nim || "", doc.nama || "", doc.angkatan || "", doc.bu || "", doc.scholar || "", doc.jenisKelamin || "", doc.english || "", doc.pakaiKacamata || "", doc.riwayatPenyakit || "", ]),
     ];
-
     const ws = XLSX.utils.aoa_to_sheet(wsData);
-
     const colWidths = wsData[2].map(
       (_, i) => ({ wch: Math.max(...wsData.map((row) => (row[i] ? row[i].toString().length : 10))) + 2 })
     );
     ws["!cols"] = colWidths;
-
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Data Mahasiswa");
-
     const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     saveAs(new Blob([wbout], { type: "application/octet-stream" }), fileName);
   };
@@ -304,9 +649,99 @@ const DataPage = () => {
   const handleNextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   const handlePrevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
 
+  // --- Handler Modal Info ---
+  const handleOpenInfoModal = (mahasiswa) => {
+    setSelectedMahasiswa(mahasiswa);
+    setIsInfoModalOpen(true);
+  };
+  const handleCloseInfoModal = () => {
+    setIsInfoModalOpen(false);
+    setSelectedMahasiswa(null);
+  };
+
+  // --- Handler Modal Edit ---
+  const handleOpenEditModal = (mahasiswa) => {
+    setEditingMahasiswa(mahasiswa);
+    setIsEditModalOpen(true);
+  };
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingMahasiswa(null);
+  };
+  const handleSaveEdit = async (formData) => {
+    try {
+      const token = localStorage.getItem("adminAuthToken");
+      const updateData = { ...formData };
+      
+      if (updateData.newPassword && updateData.newPassword.trim() !== "") {
+        updateData.password = updateData.newPassword;
+      }
+      
+      delete updateData.newPassword;
+
+      await axios.put(`${API_URL}/mahasiswa/${updateData.nim}`, updateData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      handleCloseEditModal();
+      fetchData(); 
+    } catch (err) {
+      console.error("Gagal mengupdate data:", err);
+      alert("Gagal mengupdate data. Cek konsol untuk detail.");
+    }
+  };
+
+  // --- Handler Modal Delete ---
+  const handleOpenDeleteModal = (mahasiswa) => {
+    setDeletingMahasiswa(mahasiswa);
+    setIsDeleteModalOpen(true);
+  };
+  const handleCloseDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setDeletingMahasiswa(null);
+  };
+  const handleConfirmDelete = async () => {
+    if (!deletingMahasiswa) return;
+    try {
+      const token = localStorage.getItem("adminAuthToken");
+      await axios.delete(`${API_URL}/mahasiswa/${deletingMahasiswa.nim}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      handleCloseDeleteModal();
+      fetchData(); 
+    } catch (err) {
+      console.error("Gagal menghapus data:", err);
+      alert("Gagal menghapus data. Cek konsol untuk detail.");
+    }
+  };
+
+
   return (
     <div className="animate-fade-in">
-      <DataHeader onAddData={() => {}} onDownloadData={handleDownloadData} />
+      <InfoModal
+        isOpen={isInfoModalOpen}
+        onClose={handleCloseInfoModal}
+        mahasiswa={selectedMahasiswa}
+      />
+
+      <EditModal
+        key={editingMahasiswa?.nim} 
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onSave={handleSaveEdit}
+        mahasiswa={editingMahasiswa}
+      />
+      
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        mahasiswa={deletingMahasiswa}
+      />
+
+      <DataHeader onAddData={() => alert("Fitur 'Tambah Mahasiswa' belum diimplementasikan.")} onDownloadData={handleDownloadData} />
+      
       <div className="bg-white rounded-lg shadow-sm p-4">
         <TableControls
           entriesPerPage={entriesPerPage}
@@ -324,8 +759,9 @@ const DataPage = () => {
 
         <DataTable
           documents={paginatedData}
-          onEdit={(doc) => alert(`Edit data ${doc.nama}`)}
-          onDelete={(nim) => alert(`Hapus data dengan NIM: ${nim}`)}
+          onInfo={handleOpenInfoModal} 
+          onEdit={handleOpenEditModal}
+          onDelete={handleOpenDeleteModal}
         />
 
         <div className="flex justify-between items-center mt-4 text-sm text-slate-600">

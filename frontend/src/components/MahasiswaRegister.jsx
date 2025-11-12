@@ -3,6 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import aprilLogo from '../assets/icons/april.png';
 
+// --- [PENTING] Tentukan API_URL di sini ---
+// Gunakan URL tunnel publik port 8000 Anda
+const API_URL = 'https://q576mhww-8000.asse.devtunnels.ms'; 
+// (Pastikan URL ini sama dengan yang ada di VS Code "PORTS" Anda)
+
 const Icon = ({ path, className = "w-5 h-5" }) => (
     <svg className={className} fill="currentColor" viewBox="0 0 20 20">
         <path fillRule="evenodd" d={path} clipRule="evenodd" />
@@ -36,8 +41,9 @@ const MahasiswaRegister = () => {
         }
 
         try {
+            // --- [PERBAIKAN] Menggunakan API_URL ---
             // Kirim data ke endpoint registrasi di backend
-            await axios.post('http://localhost:8000/register/mahasiswa', {
+            await axios.post(`${API_URL}/register/mahasiswa`, {
                 nim,
                 nama,
                 angkatan: parseInt(angkatan), // Pastikan angkatan adalah angka
