@@ -1,0 +1,46 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Definisikan model yang sesuai dengan tabel 'admins' Anda
+model admins {
+  id            Int      @id @default(autoincrement())
+  nama_lengkap  String
+  username      String   @unique
+  password_hash String   @db.VarChar(255) // Beri panjang eksplisit
+  created_at    DateTime @default(now())
+}
+
+model Mahasiswa {
+  nim        String  @id @unique
+  nama       String
+  // PERUBAHAN: Memberi panjang spesifik untuk menampung hash bcrypt
+  password   String  @db.VarChar(255)
+  angkatan   Int
+
+  // --- Kolom Profil yang akan diisi melalui form ---
+  bu                String?
+  dept              String?
+  jenisKelamin      String?
+  scholar           String?
+  english           String?
+  // PERUBAHAN: Menggunakan tipe Text untuk data yang bisa sangat panjang
+  judulKp           String? @db.Text
+  judulTa           String? @db.Text
+  pakaiKacamata     Boolean?
+  riwayatPenyakit   String? @db.Text
+  
+  // Kolom penanda apakah profil sudah diisi atau belum
+  isProfileComplete Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
