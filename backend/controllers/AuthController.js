@@ -9,11 +9,15 @@ export const loginAdmin = (req, res) => {
     const { email, password } = req.body;
     // Kredensial diubah sesuai permintaan Anda
     const ADMIN_EMAIL = "ibunani@april.com";
-    const ADMIN_PASSWORD = "1";
+    const ADMIN_PASSWORD = "1"; // PERINGATAN: Sangat tidak aman untuk produksi
 
     if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
         const payload = { email: email, role: 'admin' };
-        const token = jwt.sign(payload, process.env.JWT_SECRET, {
+        
+        // Pastikan Anda menambahkan JWT_SECRET di file .env Anda!
+        const secret = process.env.JWT_SECRET || "RAHASIA_INI_HARUS_DIGANTI_DI_ENV";
+        
+        const token = jwt.sign(payload, secret, {
             expiresIn: '1h'
         });
         return res.status(200).json({ message: "Login berhasil", token: token });
@@ -26,6 +30,10 @@ export const loginAdmin = (req, res) => {
 // --- FUNGSI LOGIN UNTUK MAHASISWA ---
 export const loginMahasiswa = async (req, res) => {
     const { nim, password } = req.body;
+
+    if (!nim || !password) {
+        return res.status(400).json({ message: "NIM dan Password wajib diisi." });
+    }
 
     try {
         // 1. Cari mahasiswa berdasarkan NIM di database
@@ -48,8 +56,12 @@ export const loginMahasiswa = async (req, res) => {
 
         // 5. Jika password cocok, buat token JWT
         const payload = { nim: mahasiswa.nim, role: 'mahasiswa' };
-        const token = jwt.sign(payload, process.env.JWT_SECRET, {
-            expiresIn: '8h' 
+        
+        // Pastikan Anda menambahkan JWT_SECRET di file .env Anda!
+        const secret = process.env.JWT_SECRET || "RAHASIA_INI_HARUS_DIGANTI_DI_ENV";
+
+        const token = jwt.sign(payload, secret, {
+            expiresIn: '8h' // Token berlaku 8 jam
         });
 
         // 6. Kirim respons berhasil beserta token dan status profil
@@ -66,7 +78,6 @@ export const loginMahasiswa = async (req, res) => {
 };
 
 // --- FUNGSI REGISTRASI UNTUK MAHASISWA ---
-// (Fungsi registrasi tetap ada di sini untuk pengembangan di masa depan)
 export const registerMahasiswa = async (req, res) => {
     const { nim, nama, angkatan, password } = req.body;
 
@@ -93,7 +104,7 @@ export const registerMahasiswa = async (req, res) => {
             data: {
                 nim: nim,
                 nama: nama,
-                angkatan: angkatan,
+                angkatan: parseInt(angkatan, 10), // Pastikan Angka
                 password: hashedPassword,
                 // isProfileComplete akan otomatis `false` sesuai skema
             }
@@ -107,4 +118,3 @@ export const registerMahasiswa = async (req, res) => {
         res.status(500).json({ message: "Terjadi kesalahan pada server." });
     }
 };
-

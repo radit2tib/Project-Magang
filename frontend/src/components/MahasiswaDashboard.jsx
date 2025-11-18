@@ -3,8 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import aprilLogo from '../assets/icons/april.png'; // Path ini menyebabkan error, diganti placeholder
 
+// --- [BARU] Impor komponen yang sudah dipisah ---
+import ProyekAkhirView from '../components/ProyekAkhir.jsx'; 
+// (Sesuaikan path './ProyekAkhir.jsx' jika Anda menyimpannya di folder lain)
+
+
 // --- [PENTING] Tentukan API_URL di sini ---
-// Gunakan URL tunnel publik port 8000 Anda
 const API_URL = 'http://localhost:8000'; 
 // (Pastikan URL ini sama dengan yang ada di VS Code "PORTS" Anda)
 
@@ -175,113 +179,12 @@ const ProfilView = ({ user, navigate }) => (
     </div>
 );
 
-// --- Tampilan untuk Halaman Proyek Akhir (DIROMBAK) ---
-const ProyekAkhirView = ({ user, navigate, allTitles }) => {
-    // State untuk search bar
-    const [searchTerm, setSearchTerm] = useState('');
+// --- [DIHAPUS] Komponen ProyekAkhirView ---
+// ...
+// Seluruh kode untuk 'const ProyekAkhirView = ...' 
+// telah dipindahkan ke file 'ProyekAkhir.jsx'
+// ...
 
-    // Logika untuk memfilter judul berdasarkan searchTerm
-    const filteredTitles = allTitles.filter(item => {
-        const nim = item.nim?.toLowerCase() || '';
-        const nama = item.nama?.toLowerCase() || '';
-        const judulKp = item.judulKp?.toLowerCase() || '';
-        const judulTa = item.judulTa?.toLowerCase() || '';
-        const search = searchTerm.toLowerCase();
-
-        return (
-            nim.includes(search) ||
-            nama.includes(search) ||
-            judulKp.includes(search) ||
-            judulTa.includes(search)
-        );
-    });
-
-    return (
-     <div className="animate-fade-in space-y-6">
-        {/* --- KARTU 1: JUDUL ANDA SAAT INI --- */}
-        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg">
-            <div className="border-b border-slate-200 pb-4 mb-6">
-                <h2 className="text-xl font-bold text-slate-800">Proyek Akhir Anda</h2>
-                <p className="text-slate-500 mt-1">Informasi mengenai judul Kerja Praktik dan Tugas Akhir Anda.</p>
-            </div>
-            <div className="space-y-6">
-                <div>
-                    <h3 className="font-bold text-lg text-slate-700 mb-2">Judul Kerja Praktik (KP)</h3>
-                    <p className="text-slate-600 p-4 bg-slate-50 rounded-md min-h-[50px]">{user?.judulKp || 'Belum diisi'}</p>
-                </div>
-                <div>
-                    <h3 className="font-bold text-lg text-slate-700 mb-2">Judul Tugas Akhir (TA)</h3>
-                    <p className="text-slate-600 p-4 bg-slate-50 rounded-md min-h-[50px]">{user?.judulTa || 'Belum diisi'}</p>
-                </div>
-            </div>
-            <div className="mt-8 text-center">
-                <button onClick={() => navigate('/mahasiswa/lengkapi-profil')} className="px-5 py-2.5 text-sm bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-all transform hover:scale-105">
-                    Perbarui Judul KP/TA
-                </button>
-            </div>
-        </div>
-
-        {/* --- KARTU 2: DATABASE JUDUL (FITUR BARU) --- */}
-        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg">
-            <div className="border-b border-slate-200 pb-4 mb-6">
-                <h2 className="text-xl font-bold text-slate-800">Database Judul KP & TA</h2>
-                <p className="text-slate-500 mt-1">Gunakan fitur pencarian untuk memastikan orisinalitas judul Anda.</p>
-            </div>
-            
-            {/* Search Bar */}
-            <div className="mb-4">
-                <label htmlFor="searchJudul" className="sr-only">Cari Judul</label>
-                <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Icon path="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" className="w-5 h-5 text-slate-400" />
-                    </div>
-                    <input
-                        type="search"
-                        id="searchJudul"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        placeholder="Cari berdasarkan NIM, Nama, atau Judul..."
-                    />
-                </div>
-            </div>
-
-            {/* Tabel Data Judul */}
-            <div className="overflow-x-auto rounded-lg border border-slate-200">
-                <table className="min-w-full divide-y divide-slate-200">
-                    <thead className="bg-slate-50">
-                        <tr>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">NIM</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Nama Mahasiswa</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Judul Kerja Praktik (KP)</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Judul Tugas Akhir (TA)</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-slate-200">
-                        {filteredTitles.length > 0 ? (
-                            filteredTitles.map((item) => (
-                                <tr key={item.nim} className="hover:bg-slate-50">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800">{item.nim}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{item.nama}</td>
-                                    <td className="px-6 py-4 text-sm text-slate-600 max-w-xs truncate">{item.judulKp || '-'}</td>
-                                    <td className="px-6 py-4 text-sm text-slate-600 max-w-xs truncate">{item.judulTa || '-'}</td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="4" className="px-6 py-10 text-center text-slate-500">
-                                    Tidak ada data yang cocok dengan pencarian Anda.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-
-        </div>
-     </div>
-);
-};
 
 // --- KOMPONEN BARU UNTUK SATU ITEM TUGAS ---
 // Komponen ini menangani state dan logika upload untuk satu tugas
@@ -465,7 +368,7 @@ const MahasiswaDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [activeMenu, setActiveMenu] = useState('dashboard'); // <-- Default diubah ke 'dashboard'
-    const [allTitles, setAllTitles] = useState([]); // <-- STATE BARU UNTUK MENAMPUNG SEMUA JUDUL
+    const [allTitles, setAllTitles] = useState([]); // <-- STATE INI TETAP DI SINI
     const navigate = useNavigate();
 
     // Objek untuk judul header dinamis
@@ -539,27 +442,29 @@ const MahasiswaDashboard = () => {
             <main className="flex-1 flex flex-col overflow-y-auto">
                  <header className="flex items-center h-20 p-6 border-b border-slate-200 bg-white sticky top-0 z-10">
                      <div className="flex-1">
-                         {/* Header dinamis berdasarkan menu aktif */}
-                         <h1 className="text-2xl font-bold text-slate-800">{menuTitles[activeMenu]}</h1>
+                          {/* Header dinamis berdasarkan menu aktif */}
+                          <h1 className="text-2xl font-bold text-slate-800">{menuTitles[activeMenu]}</h1>
                      </div>
                      <div className="flex items-center">
-                         <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg">
-                             {user?.nama?.charAt(0)}
-                         </div>
-                         <div className="ml-3 text-left">
-                             <p className="font-semibold text-slate-700 text-sm truncate max-w-[150px]">{user?.nama}</p>
-                             <p className="text-xs text-slate-500">{user?.nim}</p>
-                         </div>
+                          <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg">
+                               {user?.nama?.charAt(0)}
+                          </div>
+                          <div className="ml-3 text-left">
+                               <p className="font-semibold text-slate-700 text-sm truncate max-w-[150px]">{user?.nama}</p>
+                               <p className="text-xs text-slate-500">{user?.nim}</p>
+                          </div>
                      </div>
                  </header>
                  {/* Latar belakang main content diubah agar lebih kontras dengan kartu */}
                  <div className="p-6 md:p-8 bg-slate-100"> 
-                     {/* Konten dinamis berdasarkan menu aktif */}
-                     {activeMenu === 'dashboard' && <DashboardView user={user} setActiveMenu={setActiveMenu} />}
-                     {activeMenu === 'profil' && <ProfilView user={user} navigate={navigate} />}
-                     {/* Berikan prop allTitles ke ProyekAkhirView */}
-                     {activeMenu === 'proyek' && <ProyekAkhirView user={user} navigate={navigate} allTitles={allTitles} />}
-                     {activeMenu === 'tugas' && <TugasView user={user} navigate={navigate} />}
+                      {/* Konten dinamis berdasarkan menu aktif */}
+                      {activeMenu === 'dashboard' && <DashboardView user={user} setActiveMenu={setActiveMenu} />}
+                      {activeMenu === 'profil' && <ProfilView user={user} navigate={navigate} />}
+                      
+                      {/* --- [PERUBAHAN] Memanggil komponen yang diimpor --- */}
+                      {activeMenu === 'proyek' && <ProyekAkhirView user={user} navigate={navigate} allTitles={allTitles} />}
+                      
+                      {activeMenu === 'tugas' && <TugasView user={user} navigate={navigate} />}
                  </div>
             </main>
         </div>

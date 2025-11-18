@@ -4,86 +4,183 @@ import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 // =======================================================
-// FUNGSI YANG DIPERBAIKI
+// FUNGSI BARU UNTUK UPLOAD FILE
+// =======================================================
+
+// --- [FUNGSI BARU] UNTUK MENANGANI UPLOAD FILE PROYEK ---
+export const uploadProyekFiles = async (req, res) => {
+    const nim = req.user.nim;
+
+    // 1. Cek apakah ada file yang diupload
+    if (!req.files) {
+        return res.status(400).json({ message: "Tidak ada file yang diupload." });
+    }
+
+    // 2. Siapkan data untuk diupdate ke DB
+    const dataToUpdate = {};
+    if (req.files['fileLaporanKP']) {
+        // 'req.files.fileLaporanKP[0].path' berisi "uploads/laporan_kp/NIM.pdf"
+        // Perbaikan: Ganti backslash Windows dengan forward slash
+        dataToUpdate.fileLaporanKp = req.files['fileLaporanKP'][0].path.replace(/\\/g, "/");
+    }
+    if (req.files['fileLaporanTA']) {
+        // Perbaikan: Ganti backslash Windows dengan forward slash
+        dataToUpdate.fileLaporanTa = req.files['fileLaporanTA'][0].path.replace(/\\/g, "/");
+    }
+
+    // 3. Jika tidak ada file yang relevan
+    if (Object.keys(dataToUpdate).length === 0) {
+        return res.status(400).json({ message: "Nama field file tidak sesuai." });
+    }
+
+    // 4. Update path file ke database
+    try {
+        await prisma.mahasiswa.update({
+            where: { nim: nim },
+            data: dataToUpdate
+        });
+        res.status(200).json({ message: "File laporan berhasil diupload." });
+    } catch (error) {
+        console.error("Error saat update path file proyek:", error);
+        res.status(500).json({ message: "Gagal menyimpan path file ke database." });
+    }
+};
+
+// --- [FUNGSI BARU] UNTUK MENANGANI UPLOAD FILE TUGAS ---
+export const uploadTugasFile = async (req, res) => {
+    const nim = req.user.nim;
+    const { taskNumber, judulTugas } = req.body;
+
+    // 1. Validasi dasar
+    if (!taskNumber || !judulTugas) {
+        return res.status(400).json({ message: "Nomor tugas dan Judul wajib diisi." });
+    }
+    if (!req.files || !req.files['fileLaporan']) {
+         return res.status(400).json({ message: "File Laporan wajib diisi." });
+    }
+
+    // 2. Dapatkan path file
+    // Perbaikan: Ganti backslash Windows dengan forward slash
+    const pathLaporan = req.files['fileLaporan'][0].path.replace(/\\/g, "/");
+    const pathPresentasi = req.files['filePresentasi'] ? req.files['filePresentasi'][0].path.replace(/\\/g, "/") : null;
+
+    // 3. Siapkan data untuk DB
+    const dataTugas = {
+        nim_mahasiswa: nim,
+        taskNumber: taskNumber,
+        judulTugas: judulTugas,
+        fileLaporan: pathLaporan,
+        filePresentasi: pathPresentasi
+    };
+
+    // 4. Gunakan 'upsert' untuk INSERT TUGAS BARU atau UPDATE TUGAS LAMA
+    try {
+        await prisma.tugas.upsert({
+            where: {
+                // Ini membutuhkan UNIQUE CONSTRAINT di DB: @@unique([nim_mahasiswa, taskNumber])
+                nim_mahasiswa_taskNumber: {
+                    nim_mahasiswa: nim,
+                    taskNumber: taskNumber
+                }
+            },
+            update: dataTugas, // Data jika di-update
+            create: dataTugas  // Data jika di-create
+        });
+
+        res.status(200).json({ message: "Tugas " + taskNumber + " berhasil diupload." });
+
+    } catch (error) {
+         console.error("Error saat upsert tugas:", error);
+         if(error.code === 'P2002') {
+             // Ini seharusnya tidak terjadi jika 'upsert' disetup dengan benar
+             return res.status(409).json({ message: "Terjadi duplikasi data." });
+         }
+         res.status(500).json({ message: "Gagal menyimpan tugas ke database." });
+    }
+};
+
+
+// =======================================================
+// FUNGSI LAMA (CRUD & PROFIL)
 // =======================================================
 
 // --- [PERBAIKAN] FUNGSI UNTUK MENGAMBIL SEMUA DATA MAHASISWA ---
 export const getAllMahasiswa = async (req, res) => {
-  try {
-    // 1. Hapus 'select'. Ambil SEMUA data.
-    const allMahasiswa = await prisma.mahasiswa.findMany({
-      orderBy: { nama: 'asc' },
-    });
+  try {
+    // 1. Hapus 'select'. Ambil SEMUA data.
+    const allMahasiswa = await prisma.mahasiswa.findMany({
+      orderBy: { nama: 'asc' },
+    });
 
-    // 2. Hapus password secara manual SETELAH mengambil data
-    // Ini memastikan frontend mendapat SEMUA data (seperti mentor, co_mentor, dll)
-    // tapi TETAP aman tanpa password.
-    const safeData = allMahasiswa.map(mhs => {
-      delete mhs.password;
-      return mhs;
-    });
+    // 2. Hapus password secara manual SETELAH mengambil data
+    // Ini memastikan frontend mendapat SEMUA data (seperti mentor, co_mentor, dll)
+    // tapi TETAP aman tanpa password.
+    const safeData = allMahasiswa.map(mhs => {
+      delete mhs.password;
+      return mhs;
+    });
 
-    // 3. Hapus 'formattedData'. Kirim data mentah.
-    // Frontend (React) akan menangani 'null' atau boolean 'false'.
-    res.status(200).json(safeData);
+    // 3. Hapus 'formattedData'. Kirim data mentah.
+    // Frontend (React) akan menangani 'null' atau boolean 'false'.
+    res.status(200).json(safeData);
 
-  } catch (error) {
-    console.error("Error saat mengambil data semua mahasiswa:", error);
-    res.status(500).json({ message: "Terjadi kesalahan pada server." });
-  }
+  } catch (error) {
+    console.error("Error saat mengambil data semua mahasiswa:", error);
+    res.status(500).json({ message: "Terjadi kesalahan pada server." });
+  }
 };
 
 // --- [PERBAIKAN] FUNGSI UNTUK MEMPERBARUI MAHASISWA (OLEH ADMIN) ---
 export const updateMahasiswa = async (req, res) => {
-    const { nim } = req.params; 
-    let dataToUpdate = req.body; // Gunakan 'let' agar bisa diubah
+    const { nim } = req.params; 
+    let dataToUpdate = req.body; // Gunakan 'let' agar bisa diubah
 
-    try {
-        // 1. Penanganan Password (Lebih Aman)
-        // Cek jika 'password' dikirim DAN tidak kosong
-        if (dataToUpdate.password && dataToUpdate.password.trim() !== "") {
-            const salt = await bcrypt.genSalt(10);
-            dataToUpdate.password = await bcrypt.hash(dataToUpdate.password, salt);
-        } else {
-            // Jika password kosong atau tidak dikirim, HAPUS
-            // agar tidak mengupdate password jadi string kosong
-            delete dataToUpdate.password;
-        }
+    try {
+        // 1. Penanganan Password (Lebih Aman)
+        // Cek jika 'password' dikirim DAN tidak kosong
+        if (dataToUpdate.password && dataToUpdate.password.trim() !== "") {
+            const salt = await bcrypt.genSalt(10);
+            dataToUpdate.password = await bcrypt.hash(dataToUpdate.password, salt);
+        } else {
+            // Jika password kosong atau tidak dikirim, HAPUS
+            // agar tidak mengupdate password jadi string kosong
+            delete dataToUpdate.password;
+        }
 
-        // 2. Konversi Tipe Data Boolean (INI ADALAH PERBAIKAN ERROR 500)
-        // Form React mengirim string "true" atau "false"
-        if (dataToUpdate.pakaiKacamata !== undefined) {
-            dataToUpdate.pakaiKacamata = (dataToUpdate.pakaiKacamata === 'true' || dataToUpdate.pakaiKacamata === true);
-        }
-        if (dataToUpdate.isProfileComplete !== undefined) {
-            dataToUpdate.isProfileComplete = (dataToUpdate.isProfileComplete === 'true' || dataToUpdate.isProfileComplete === true);
-        }
+        // 2. Konversi Tipe Data Boolean (INI ADALAH PERBAIKAN ERROR 500)
+        // Form React mengirim string "true" atau "false"
+        if (dataToUpdate.pakaiKacamata !== undefined) {
+            dataToUpdate.pakaiKacamata = (dataToUpdate.pakaiKacamata === 'true' || dataToUpdate.pakaiKacamata === true);
+        }
+        if (dataToUpdate.isProfileComplete !== undefined) {
+            dataToUpdate.isProfileComplete = (dataToUpdate.isProfileComplete === 'true' || dataToUpdate.isProfileComplete === true);
+n       }
 
-        // 3. Konversi Tipe Data Angka (Opsional tapi lebih aman)
-        // Pastikan angkatan disimpan sebagai Angka, bukan string "2023"
-        if (dataToUpdate.angkatan) {
-            dataToUpdate.angkatan = parseInt(dataToUpdate.angkatan, 10);
-        }
+        // 3. Konversi Tipe Data Angka (Opsional tapi lebih aman)
+        // Pastikan angkatan disimpan sebagai Angka, bukan string "2023"
+        if (dataToUpdate.angkatan) {
+            dataToUpdate.angkatan = parseInt(dataToUpdate.angkatan, 10);
+        }
 
-        const updatedMahasiswa = await prisma.mahasiswa.update({
-            where: { nim: nim }, 
-            data: dataToUpdate // dataToUpdate sekarang sudah bersih
-        });
+        const updatedMahasiswa = await prisma.mahasiswa.update({
+            where: { nim: nim }, 
+            data: dataToUpdate // dataToUpdate sekarang sudah bersih
+        });
 
-        delete updatedMahasiswa.password;
-        res.status(200).json({ message: "Data mahasiswa berhasil diperbarui", data: updatedMahasiswa });
+        delete updatedMahasiswa.password;
+        res.status(200).json({ message: "Data mahasiswa berhasil diperbarui", data: updatedMahasiswa });
 
-    } catch (error) {
-        console.error("ERROR BACKEND SAAT UPDATE:", error); // <-- Ini akan log error detail di terminal
-        if (error.code === 'P2025') {
-            return res.status(404).json({ message: "Mahasiswa dengan NIM tersebut tidak ditemukan." });
-        }
-        // Menangkap error jika konversi tipe data gagal
-        if (error.code === 'P2003' || error.name === 'PrismaClientValidationError') {
-             return res.status(400).json({ message: "Update gagal. Tipe data tidak valid.", error: error.message });
-        }
-        res.status(500).json({ message: "Terjadi kesalahan pada server." });
-    }
+    } catch (error) {
+        console.error("ERROR BACKEND SAAT UPDATE:", error); // <-- Ini akan log error detail di terminal
+        if (error.code === 'P2025') {
+            return res.status(404).json({ message: "Mahasiswa dengan NIM tersebut tidak ditemukan." });
+        }
+        // Menangkap error jika konversi tipe data gagal
+        if (error.code === 'P2003' || error.name === 'PrismaClientValidationError') {
+             return res.status(400).json({ message: "Update gagal. Tipe data tidak valid.", error: error.message });
+        }
+        res.status(500).json({ message: "Terjadi kesalahan pada server." });
+    }
 };
 
 
@@ -93,119 +190,119 @@ export const updateMahasiswa = async (req, res) => {
 
 // --- FUNGSI UNTUK MENGAMBIL PROFIL MAHASISWA (DIRI SENDIRI) ---
 export const getMahasiswaProfile = async (req, res) => {
-    try {
-        const nimDariToken = req.user.nim;
-        const mahasiswa = await prisma.mahasiswa.findUnique({
-            where: {
-                nim: nimDariToken
-            },
-            select: {
-                nim: true,
-                nama: true,
-                angkatan: true,
-                bu: true,
-                dept: true,
-                judulKp: true,
-                judulTa: true,
-                pakaiKacamata: true,
-                riwayatPenyakit: true,
-                scholar: true,
-                english: true,
-                isProfileComplete: true,
-                jenisKelamin: true 
-            }
-        });
+    try {
+        const nimDariToken = req.user.nim;
+        const mahasiswa = await prisma.mahasiswa.findUnique({
+            where: {
+                nim: nimDariToken
+            },
+            select: {
+                nim: true,
+                nama: true,
+                angkatan: true,
+                bu: true,
+                dept: true,
+                judulKp: true,
+                judulTa: true,
+                pakaiKacamata: true,
+                riwayatPenyakit: true,
+                scholar: true,
+                english: true,
+                isProfileComplete: true,
+                jenisKelamin: true 
+            }
+        });
 
-        if (!mahasiswa) {
-            return res.status(404).json({ message: "Mahasiswa tidak ditemukan." });
-        }
-        res.status(200).json(mahasiswa);
+        if (!mahasiswa) {
+            return res.status(404).json({ message: "Mahasiswa tidak ditemukan." });
+        }
+        res.status(200).json(mahasiswa);
 
-    } catch (error) {
-        console.error("Error saat mengambil profil mahasiswa:", error);
-        res.status(500).json({ message: "Terjadi kesalahan pada server." });
-    }
+    } catch (error) {
+        console.error("Error saat mengambil profil mahasiswa:", error);
+           res.status(500).json({ message: "Terjadi kesalahan pada server." });
+    }
 };
 
 // --- FUNGSI UNTUK MEMPERBARUI PROFIL MAHASISWA (DIRI SENDIRI) ---
 export const updateMahasiswaProfile = async (req, res) => {
-    const nim = req.user.nim;
-    let dataToUpdate = req.body; // Gunakan 'let'
+    const nim = req.user.nim;
+    let dataToUpdate = req.body; // Gunakan 'let'
 
-    delete dataToUpdate.password; 
+    delete dataToUpdate.password; 
 
-    // Tambahkan konversi boolean di sini juga untuk halaman profil mahasiswa
-    if (dataToUpdate.pakaiKacamata !== undefined) {
-        dataToUpdate.pakaiKacamata = (dataToUpdate.pakaiKacamata === 'true' || dataToUpdate.pakaiKacamata === true);
-    }
-    
-    try {
-        await prisma.mahasiswa.update({
-            where: { nim: nim },
-            data: {
-                ...dataToUpdate,
-                isProfileComplete: true 
-            }
-        });
-        res.status(200).json({ message: "Profil berhasil diperbarui." });
+    // Tambahkan konversi boolean di sini juga untuk halaman profil mahasiswa
+    if (dataToUpdate.pakaiKacamata !== undefined) {
+             dataToUpdate.pakaiKacamata = (dataToUpdate.pakaiKacamata === 'true' || dataToUpdate.pakaiKacamata === true);
+    }
+    
+    try {
+        await prisma.mahasiswa.update({
+            where: { nim: nim },
+            data: {
+                ...dataToUpdate,
+                isProfileComplete: true 
+            }
+        });
+        res.status(200).json({ message: "Profil berhasil diperbarui." });
 
-    } catch (error) {
-        console.error("Error saat memperbarui profil:", error);
-        res.status(500).json({ message: "Terjadi kesalahan pada server." });
-    }
+    } catch (error) {
+        console.error("Error saat memperbarui profil:", error);
+        res.status(500).json({ message: "Terjadi kesalahan pada server." });
+img     }
 };
 
 // --- FUNGSI UNTUK MEMBUAT MAHASISWA BARU ---
 export const createMahasiswa = async (req, res) => {
-    const { nim, nama, password, angkatan, bu, dept } = req.body;
+    const { nim, nama, password, angkatan, bu, dept } = req.body;
 
-    if (!nim || !nama || !password) {
-        return res.status(400).json({ message: "NIM, Nama, dan Password wajib diisi." });
-    }
+    if (!nim || !nama || !password) {
+        return res.status(400).json({ message: "NIM, Nama, dan Password wajib diisi." });
+    }
+key
+    try {
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
 
-    try {
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+        const newMahasiswa = await prisma.mahasiswa.create({
+            data: {
+                nim: nim,
+                nama: nama,
+                password: hashedPassword,
+                angkatan: parseInt(angkatan, 10), // Pastikan angkatan adalah angka
+                bu: bu,
+                dept: dept,
+                isProfileComplete: false 
+            }
+        });
 
-        const newMahasiswa = await prisma.mahasiswa.create({
-            data: {
-                nim: nim,
-                nama: nama,
-                password: hashedPassword,
-                angkatan: parseInt(angkatan, 10), // Pastikan angkatan adalah angka
-                bu: bu,
-                dept: dept,
-                isProfileComplete: false 
-            }
-        });
+        delete newMahasiswa.password;
+        res.status(201).json({ message: "Mahasiswa berhasil dibuat", data: newMahasiswa });
 
-        delete newMahasiswa.password;
-        res.status(201).json({ message: "Mahasiswa berhasil dibuat", data: newMahasiswa });
-
-    } catch (error) {
-       if (error.code === 'P2002') {
-           return res.status(409).json({ message: "NIM sudah terdaftar." });
-       }
-        console.error("Error saat membuat mahasiswa:", error);
-        res.status(500).json({ message: "Terjadi kesalahan pada server." });
-    }
+    } catch (error) {
+       if (error.code === 'P2002') {
+           return res.status(409).json({ message: "NIM sudah terdaftar." });
+       }
+        console.error("Error saat membuat mahasiswa:", error);
+        res.status(500).json({ message: "Terjadi kesalahan pada server." });
+    }
 };
 
 // --- FUNGSI UNTUK MENGHAPUS MAHASISWA (OLEH ADMIN) ---
 export const deleteMahasiswa = async (req, res) => {
-    const { nim } = req.params; 
+    const { nim } = req.params; 
 
-    try {
-        await prisma.mahasiswa.delete({
-            where: { nim: nim }
-        });
-        res.status(200).json({ message: "Data mahasiswa berhasil dihapus." });
+    try {
+        await prisma.mahasiswa.delete({
+                where: { nim: nim }
+      });
+        res.status(200).json({ message: "Data mahasiswa berhasil dihapus." });
 
-    } catch (error) {
-       if (error.code === 'P2025') {
-           return res.status(404).json({ message: "Mahasiswa dengan NIM tersebut tidak ditemukan." });
-       }
-        console.error("Error saat menghapus mahasiswa:", error);
-        res.status(500).json({ message: "Terjadi kesalahan pada server." });
-    }
+    } catch (error) {
+       if (error.code === 'P2025') {
+           return res.status(404).json({ message: "Mahasiswa dengan NIM tersebut tidak ditemukan." });
+       }
+        console.error("Error saat menghapus mahasiswa:", error);
+        res.status(500).json({ message: "Terjadi kesalahan pada server." });
+key     }
 };
