@@ -1,5 +1,3 @@
-// File: src/components/KptaPage.jsx
-
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 
@@ -10,9 +8,7 @@ const Icon = ({ path, className = "w-6 h-6" }) => (
     </svg>
 );
 
-// --- [BARU] Komponen Tombol Download File ---
-// Komponen ini akan menampilkan tombol download jika ada filePath,
-// atau tanda strip (-) jika tidak ada.
+// --- Komponen Tombol Download File ---
 const FileDownloadButton = ({ filePath, apiUrl }) => {
     // Jika tidak ada file, tampilkan strip
     if (!filePath || filePath === '-') {
@@ -37,8 +33,8 @@ const FileDownloadButton = ({ filePath, apiUrl }) => {
                 transition-colors duration-150
             "
         >
-            {/* Ikon lingkaran-panah-bawah */}
-            <Icon path="M12 10v6m0 0l-3-3m3 3l3-3m2.25-1.5a9 9 0 11-18 0 9 9 0 0118 0z" className="w-5 h-5" />
+            {/* Ikon File/Dokumen */}
+            <Icon path="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" className="w-5 h-5" />
         </a>
     );
 };
@@ -79,7 +75,7 @@ const DocumentsTable = ({ documents, onEdit, onDelete, apiUrl }) => (
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Dept</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Judul KP</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Judul TA</th>
-                    {/* --- [BARU] Kolom Header File --- */}
+                    {/* --- Kolom Header File --- */}
                     <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">File KP</th>
                     <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">File TA</th>
                     <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">Aksi</th>
@@ -96,13 +92,12 @@ const DocumentsTable = ({ documents, onEdit, onDelete, apiUrl }) => (
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 truncate max-w-xs">{doc.judulKp || '-'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 truncate max-w-xs">{doc.judulTa || '-'}</td>
 
-                        {/* --- [BARU] Sel Data File --- */}
-                        {/* Pastikan 'doc.fileKp' dan 'doc.fileTa' ada di data Anda */}
+                        {/* --- Sel Data File --- */}
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                            <FileDownloadButton filePath={doc.fileKp} apiUrl={apiUrl} />
+                            <FileDownloadButton filePath={doc.fileLaporanKp} apiUrl={apiUrl} />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                            <FileDownloadButton filePath={doc.fileTa} apiUrl={apiUrl} />
+                            <FileDownloadButton filePath={doc.fileLaporanTa} apiUrl={apiUrl} />
                         </td>
 
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -118,7 +113,6 @@ const DocumentsTable = ({ documents, onEdit, onDelete, apiUrl }) => (
                     </tr>
                 )) : (
                     <tr>
-                        {/* --- [MODIFIKASI] colSpan diubah ke 10 --- */}
                         <td colSpan="10" className="text-center py-10 text-slate-500">
                             Tidak ada data yang ditemukan.
                         </td>
