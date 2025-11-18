@@ -16,9 +16,7 @@ const app = express();
 // 1. Buat daftar semua alamat frontend yang diizinkan
 const allowedOrigins = [
   'http://localhost:5173', // Alamat dev lokal Anda
-  'https://q576mhww-5173.asse.devtunnels.ms', 
-  'https://q576mhww-8000.asse.devtunnels.ms'// Alamat dev tunnel dari error
-];
+]
 
 // 2. Ubah 'origin' dari string menjadi fungsi dinamis
 const corsOptions = {

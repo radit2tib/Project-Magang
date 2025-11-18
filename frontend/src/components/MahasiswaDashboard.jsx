@@ -5,7 +5,7 @@ import aprilLogo from '../assets/icons/april.png'; // Path ini menyebabkan error
 
 // --- [PENTING] Tentukan API_URL di sini ---
 // Gunakan URL tunnel publik port 8000 Anda
-const API_URL = 'https://q576mhww-8000.asse.devtunnels.ms'; 
+const API_URL = 'http://localhost:8000'; 
 // (Pastikan URL ini sama dengan yang ada di VS Code "PORTS" Anda)
 
 

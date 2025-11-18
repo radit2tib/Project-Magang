@@ -572,7 +572,7 @@ const DataPage = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletingMahasiswa, setDeletingMahasiswa] = useState(null);
   
-  const API_URL = "https://q576mhww-8000.asse.devtunnels.ms";
+  const API_URL = "http://localhost:8000";
   
 
   const fetchData = async () => {
