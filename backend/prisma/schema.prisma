@@ -16,9 +16,9 @@ model admins {
 }
 
 model Mahasiswa {
-  nim               String   @id @unique
+  nim               String    @id @unique
   nama              String
-  password          String   @db.VarChar(255)
+  password          String    @db.VarChar(255)
   angkatan          Int
   bu                String?
   dept              String?
@@ -29,11 +29,37 @@ model Mahasiswa {
   judulTa           String?
   pakaiKacamata     Boolean?
   riwayatPenyakit   String?
-  isProfileComplete Boolean  @default(false)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @default(now()) @updatedAt
+  isProfileComplete Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now()) @updatedAt
   mentor            String?
   co_mentor         String?
   fileLaporanKp     String?
   fileLaporanTa     String?
+
+  // --- [TAMBAHAN BARU] ---
+  // Ini adalah relasi ke tabel Tugas. 
+  // Satu mahasiswa bisa punya banyak tugas.
+  daftarTugas       Tugas[]
+}
+
+// --- [MODEL BARU] ---
+model Tugas {
+  id              Int       @id @default(autoincrement())
+  taskNumber      String    
+  
+  judulTugas      String
+  
+  nilai           Int?
+  fileLaporan     String    
+  filePresentasi  String?   // Opsional (bisa null)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relasi balik ke Mahasiswa
+  nim_mahasiswa   String
+  mahasiswa       Mahasiswa @relation(fields: [nim_mahasiswa], references: [nim], onDelete: Cascade)
+
+  @@unique([nim_mahasiswa, taskNumber])
 }

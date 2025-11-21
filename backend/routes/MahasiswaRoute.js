@@ -1,77 +1,82 @@
 import express from "express";
 import { 
-    // Fungsi CRUD Lama
+    // --- Fungsi CRUD Lama ---
     getAllMahasiswa,
     createMahasiswa,
     updateMahasiswa,
     deleteMahasiswa,
     getMahasiswaProfile, 
     updateMahasiswaProfile,
-    // Fungsi Upload Baru
+    
+    // --- Fungsi Upload ---
     uploadProyekFiles,
-    uploadTugasFile
+    uploadTugasFile,
+    
+    // --- [BARU] Fungsi Penilaian Admin ---
+    getAllPenugasan,
+    gradeTugas
 } from "../controllers/MahasiswaController.js";
+
 import { verifyToken } from "../middleware/AuthMiddleware.js";
-// Perbaikan Casing: pastikan nama file adalah 'uploadMiddleware.js' (u kecil)
-import { uploadProyek, uploadTugas } from "../middleware/uploadMiddleware.js";
+
+// Pastikan nama file fisik sesuai (UploadMiddleware.js)
+import { uploadProyek, uploadTugas } from "../middleware/UploadMiddleware.js"; 
 
 const router = express.Router();
 
 // =======================================================
-// RUTE PROFIL (TARUH PALING ATAS!)
+// 1. RUTE UMUM & PROFIL
 // =======================================================
 router.get('/test', (req, res) => {
     res.send('SERVER BERHASIL MELOAD FILE BARU');
 });
 
-// Rute untuk mendapatkan profil mahasiswa yang sedang login
+// Rute Profil Mahasiswa (Membutuhkan Token)
 router.get('/profile', verifyToken, getMahasiswaProfile);
-
-// Rute untuk memperbarui profil mahasiswa yang sedang login
-router.put('/profile', verifyToken, updateMahasiswaProfile);
+router.patch('/profile', verifyToken, updateMahasiswaProfile);
 
 
 // =======================================================
-// RUTE UPLOAD BARU
+// 2. RUTE UPLOAD FILE (MAHASISWA)
 // =======================================================
-router.post(
-    '/proyek/upload', 
+
+// Upload Proyek Akhir (KP & TA)
+router.patch(
+    '/upload-proyek', 
     verifyToken, 
-    uploadProyek.fields([ // 'fields' untuk multiple form fields
-        { name: 'fileLaporanKP', maxCount: 1 },
-        { name: 'fileLaporanTA', maxCount: 1 }
-    ]), 
+    uploadProyek, // Middleware Multer (sudah config fields)
     uploadProyekFiles
 );
 
+// Upload Tugas Mingguan
 router.post(
     '/tugas', 
     verifyToken, 
-    uploadTugas.fields([ // 'fields' untuk multiple form fields
-        { name: 'fileLaporan', maxCount: 1 },
-        { name: 'filePresentasi', maxCount: 1 }
-    ]), 
+    uploadTugas, // Middleware Multer (sudah config fields)
     uploadTugasFile
 );
 
 
 // =======================================================
-// RUTE ADMIN / UMUM
+// 3. RUTE KHUSUS ADMIN (MANAJEMEN TUGAS & NILAI) [BARU]
 // =======================================================
 
-// Rute untuk mendapatkan semua data mahasiswa
-router.get('/', getAllMahasiswa);
+// Ambil semua data mahasiswa beserta daftar tugasnya
+// Endpoint ini dipanggil oleh halaman "AdminManajemenTugas.jsx"
+router.get('/admin/penugasan', getAllPenugasan);
 
-// Rute untuk membuat data mahasiswa baru
-router.post('/', createMahasiswa);
-
-// Rute dinamis (menggunakan parameter :nim) harus di bawah rute statis
-// Rute untuk memperbarui data mahasiswa berdasarkan NIM
-router.put('/:nim', updateMahasiswa);
-
-// Rute untuk menghapus data mahasiswa berdasarkan NIM
-router.delete('/:nim', deleteMahasiswa);
+// Simpan Nilai Tugas
+// Endpoint ini dipanggil saat tombol "Simpan" ditekan admin
+router.post('/admin/grade', gradeTugas);
 
 
-// Perbaikan: Tambahkan 'export default' agar index.js bisa mengimpornya
+// =======================================================
+// 4. RUTE CRUD ADMIN (DATA MASTER MAHASISWA)
+// =======================================================
+
+router.get('/', getAllMahasiswa);       // Ambil semua mahasiswa
+router.post('/', createMahasiswa);      // Tambah mahasiswa
+router.put('/:nim', updateMahasiswa);   // Edit mahasiswa
+router.delete('/:nim', deleteMahasiswa);// Hapus mahasiswa
+
 export default router;

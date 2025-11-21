@@ -55,7 +55,7 @@ export const loginMahasiswa = async (req, res) => {
         }
 
         // 5. Jika password cocok, buat token JWT
-        const payload = { nim: mahasiswa.nim, role: 'mahasiswa' };
+        const payload = { nim: mahasiswa.nim, role: 'mahasiswa',nama: mahasiswa.nama  };
         
         // Pastikan Anda menambahkan JWT_SECRET di file .env Anda!
         const secret = process.env.JWT_SECRET || "RAHASIA_INI_HARUS_DIGANTI_DI_ENV";

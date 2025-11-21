@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import aprilLogo from '../assets/icons/april.png'; // Path ini menyebabkan error, diganti placeholder
+import aprilLogo from '../assets/icons/april.png'; 
 
-// --- [BARU] Impor komponen yang sudah dipisah ---
+// --- IMPOR KOMPONEN EKSTERNAL ---
 import ProyekAkhirView from '../components/ProyekAkhir.jsx'; 
-// (Sesuaikan path './ProyekAkhir.jsx' jika Anda menyimpannya di folder lain)
+import MahasiswaTugas from "./MahasiswaTugas.jsx";
 
-
-// --- [PENTING] Tentukan API_URL di sini ---
+// --- KONFIGURASI ---
 const API_URL = 'http://localhost:8000'; 
-// (Pastikan URL ini sama dengan yang ada di VS Code "PORTS" Anda)
-
 
 // --- Komponen Ikon SVG ---
 const Icon = ({ path, className = "" }) => (
@@ -20,13 +17,12 @@ const Icon = ({ path, className = "" }) => (
     </svg>
 );
 
-// --- Komponen Sidebar (Tombol Dashboard Ditambahkan) ---
+// --- Komponen Sidebar ---
 const Sidebar = ({ activeMenu, setActiveMenu, user, handleLogout }) => (
     <aside className="hidden md:flex flex-col w-64 bg-white shadow-lg">
         <div className="flex items-center justify-center h-20 border-b border-slate-200 p-4">
-            {/* Ganti dengan URL placeholder karena file lokal tidak ditemukan */}
             <img 
-                src={aprilLogo} // Baris 20: Dikembalikan ke placeholder
+                src={aprilLogo} 
                 alt="Logo APRIL" 
                 className="h-9" 
                 onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/200x50?text=Logo"; }}
@@ -34,12 +30,10 @@ const Sidebar = ({ activeMenu, setActiveMenu, user, handleLogout }) => (
         </div>
         <div className="flex flex-col flex-grow p-4">
             <nav className="flex-grow space-y-2">
-                {/* --- TOMBOL DASHBOARD BARU --- */}
                 <button onClick={() => setActiveMenu('dashboard')} className={`flex items-center w-full px-4 py-2.5 rounded-lg transition-all duration-200 text-sm text-left ${activeMenu === 'dashboard' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-blue-50 hover:text-blue-700'}`}>
                     <Icon path="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25A2.25 2.25 0 018.25 10.5H6A2.25 2.25 0 013.75 8.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 018.25 20.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6A2.25 2.25 0 0115.75 3.75h2.25A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25A2.25 2.25 0 0113.5 8.25V6zM13.5 15.75A2.25 2.25 0 0115.75 13.5h2.25a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" className="mr-3" />
                     <span className="font-semibold">Dashboard</span>
                 </button>
-                {/* --- AKHIR TOMBOL DASHBOARD --- */}
                 
                 <button onClick={() => setActiveMenu('profil')} className={`flex items-center w-full px-4 py-2.5 rounded-lg transition-all duration-200 text-sm text-left ${activeMenu === 'profil' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-blue-50 hover:text-blue-700'}`}>
                     <Icon path="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" className="mr-3" />
@@ -64,7 +58,7 @@ const Sidebar = ({ activeMenu, setActiveMenu, user, handleLogout }) => (
     </aside>
 );
 
-// --- Tampilan untuk Halaman Dashboard (BARU) ---
+// --- Tampilan untuk Halaman Dashboard ---
 const DashboardView = ({ user, setActiveMenu }) => (
     <div className="animate-fade-in">
         {/* Kartu Selamat Datang */}
@@ -179,196 +173,14 @@ const ProfilView = ({ user, navigate }) => (
     </div>
 );
 
-// --- [DIHAPUS] Komponen ProyekAkhirView ---
-// ...
-// Seluruh kode untuk 'const ProyekAkhirView = ...' 
-// telah dipindahkan ke file 'ProyekAkhir.jsx'
-// ...
-
-
-// --- KOMPONEN BARU UNTUK SATU ITEM TUGAS ---
-// Komponen ini menangani state dan logika upload untuk satu tugas
-const TugasItem = ({ taskNumber }) => {
-    const [judul, setJudul] = useState('');
-    const [fileLaporan, setFileLaporan] = useState(null); // Diubah dari 'file'
-    const [filePresentasi, setFilePresentasi] = useState(null); // FILE BARU
-    const [isLoading, setIsLoading] = useState(false);
-    const [message, setMessage] = useState('');
-    const [messageType, setMessageType] = useState('success'); // 'success' atau 'error'
-
-    // Handler untuk file laporan
-    const handleLaporanChange = (e) => {
-        if (e.target.files && e.target.files[0]) {
-            setFileLaporan(e.target.files[0]);
-        } else {
-            setFileLaporan(null);
-        }
-    };
-
-    // Handler BARU untuk file presentasi
-    const handlePresentasiChange = (e) => {
-        if (e.target.files && e.target.files[0]) {
-            setFilePresentasi(e.target.files[0]);
-        } else {
-            setFilePresentasi(null);
-        }
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        // Validasi diubah: Judul dan Laporan wajib, Presentasi opsional
-        if (!judul || !fileLaporan) {
-            setMessage('Judul tugas dan File Laporan wajib diisi.');
-            setMessageType('error');
-            return;
-        }
-
-        setIsLoading(true);
-        setMessage('');
-
-        // Kita gunakan FormData karena ada file upload
-        const formData = new FormData();
-        formData.append('taskNumber', taskNumber);
-        formData.append('judulTugas', judul);
-        formData.append('fileLaporan', fileLaporan);
-        
-        // Hanya tambahkan file presentasi jika ada
-        if (filePresentasi) {
-            formData.append('filePresentasi', filePresentasi);
-        }
-
-        const token = localStorage.getItem('mahasiswaAuthToken');
-
-        try {
-            // --- SIMULASI UPLOAD ---
-            console.log('Simulasi upload data:', { 
-                taskNumber, 
-                judul, 
-                laporan: fileLaporan.name, 
-                presentasi: filePresentasi ? filePresentasi.name : 'Tidak ada' 
-            });
-            await new Promise(resolve => setTimeout(resolve, 1500)); // Simulasi delay API
-            // --- AKHIR SIMULASI ---
-
-            /* // --- CONTOH API CALL SUNGGUHAN (Ganti URL-nya nanti) ---
-            await axios.post(`${API_URL}/mahasiswa/tugas`, formData, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data' // Penting untuk file upload
-                }
-            });
-            */
-
-            // Jika berhasil
-            setMessage('Tugas ' + taskNumber + ' berhasil diupload!');
-            setMessageType('success');
-
-        } catch (err) {
-            // Jika gagal
-            console.error('Gagal upload tugas:', err);
-            setMessage('Gagal upload. Silakan coba lagi.');
-            setMessageType('error');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    return (
-        // Setiap tugas adalah form terpisah di dalam card-nya sendiri
-        <form onSubmit={handleSubmit} className="p-6 bg-white rounded-2xl shadow-lg border border-slate-200">
-            <h4 className="text-lg font-bold text-slate-800 mb-4">Tugas {taskNumber}</h4>
-            <div className="space-y-4">
-                {/* Input Judul Tugas */}
-                <div>
-                    <label htmlFor={`judul-${taskNumber}`} className="block text-sm font-semibold text-slate-600 mb-1">Judul Tugas</label>
-                    <input
-                        type="text"
-                        id={`judul-${taskNumber}`}
-                        value={judul}
-                        onChange={(e) => setJudul(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        placeholder="Contoh: Laporan Mingguan I"
-                        disabled={isLoading}
-                    />
-                </div>
-                {/* Input File Laporan (Diperbarui) */}
-                <div>
-                    <label htmlFor={`file-laporan-${taskNumber}`} className="block text-sm font-semibold text-slate-600 mb-1">Upload File Laporan (PDF, DOCX)</label>
-                    <input
-                        type="file"
-                        id={`file-laporan-${taskNumber}`}
-                        onChange={handleLaporanChange}
-                        className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
-                        disabled={isLoading}
-                        accept=".pdf,.doc,.docx"
-                    />
-                    {fileLaporan && <span className="text-xs text-slate-500 mt-1 block">File terpilih: {fileLaporan.name}</span>}
-                </div>
-                {/* Input File Presentasi (BARU) */}
-                <div>
-                    <label htmlFor={`file-presentasi-${taskNumber}`} className="block text-sm font-semibold text-slate-600 mb-1">Upload File Presentasi (PPTX, PDF)</label>
-                    <input
-                        type="file"
-                        id={`file-presentasi-${taskNumber}`}
-                        onChange={handlePresentasiChange}
-                        className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100 disabled:opacity-50"
-                        disabled={isLoading}
-                        accept=".pptx,.pdf"
-                    />
-                    {filePresentasi && <span className="text-xs text-slate-500 mt-1 block">File terpilih: {filePresentasi.name}</span>}
-                </div>
-                {/* Tombol Submit & Pesan Status */}
-                <div className="flex items-center justify-between pt-2">
-                    <button 
-                        type="submit" 
-                        disabled={isLoading}
-                        className="px-5 py-2 text-sm bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-all disabled:bg-slate-400"
-                    >
-                        {isLoading ? 'Mengupload...' : 'Upload Tugas'}
-                    </button>
-                    {message && (
-                        <span className={`text-sm font-semibold ${messageType === 'success' ? 'text-green-600' : 'text-red-600'}`}>
-                            {message}
-                        </span>
-                    )}
-                </div>
-            </div>
-        </form>
-    );
-};
-
-
-// --- Tampilan untuk Halaman Tugas (DIROMBAK) ---
-const TugasView = ({ user, navigate }) => {
-    // Daftar tugas dengan angka Romawi
-    const taskList = ['I', 'II', 'III', 'IV', 'V', 'VI'];
-
-    return (
-        <div className="animate-fade-in">
-            {/* Catatan: Header (judul "Tugas" dan deskripsi) 
-             sekarang ada di komponen header utama, 
-             jadi di sini kita langsung tampilkan daftar tugasnya.
-            */}
-            
-            {/* Kita buat grid agar rapi di layar besar */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Loop/map semua tugas dan render komponen TugasItem untuk masing-masing */}
-                {taskList.map(number => (
-                    <TugasItem key={number} taskNumber={number} />
-                ))}
-            </div>
-        </div>
-    );
-};
-
 
 // --- Komponen Dashboard Utama ---
 const MahasiswaDashboard = () => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [activeMenu, setActiveMenu] = useState('dashboard'); // <-- Default diubah ke 'dashboard'
-    const [allTitles, setAllTitles] = useState([]); // <-- STATE INI TETAP DI SINI
+    const [activeMenu, setActiveMenu] = useState('dashboard'); 
+    const [allTitles, setAllTitles] = useState([]); 
     const navigate = useNavigate();
 
     // Objek untuk judul header dinamis
@@ -387,7 +199,6 @@ const MahasiswaDashboard = () => {
                 return;
             }
             try {
-                // --- [PERBAIKAN] Menggunakan API_URL ---
                 const response = await axios.get(`${API_URL}/mahasiswa/profile`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -402,13 +213,8 @@ const MahasiswaDashboard = () => {
             }
         };
 
-        // --- FETCH BARU UNTUK SEMUA JUDUL (MENGGUNAKAN MOCK DATA) ---
         const fetchAllTitles = () => {
-            // Nanti, Anda akan mengganti ini dengan API call sungguhan ke backend
-            // const response = await axios.get(`${API_URL}/mahasiswa/all-titles`, { ... });
-            // setAllTitles(response.data);
-
-            // Mock data untuk sekarang:
+            // Mock data (sesuaikan jika sudah ada API)
             const mockAllTitles = [
                 { nim: '2255301001', nama: 'Budi Santoso', judulKp: 'Analisis Sistem Informasi Persediaan Barang di PT. ABC', judulTa: 'Rancang Bangun Aplikasi E-Commerce Berbasis Web' },
                 { nim: '2255301002', nama: 'Ani Yudhoyono', judulKp: 'Implementasi Jaringan Komputer LAN di Kantor XYZ', judulTa: 'Sistem Pendukung Keputusan Pemilihan Karyawan Terbaik' },
@@ -420,7 +226,7 @@ const MahasiswaDashboard = () => {
         };
 
         fetchProfile();
-        fetchAllTitles(); // Panggil fungsi fetch baru
+        fetchAllTitles(); 
     }, [navigate]);
 
     const handleLogout = () => {
@@ -442,7 +248,6 @@ const MahasiswaDashboard = () => {
             <main className="flex-1 flex flex-col overflow-y-auto">
                  <header className="flex items-center h-20 p-6 border-b border-slate-200 bg-white sticky top-0 z-10">
                      <div className="flex-1">
-                          {/* Header dinamis berdasarkan menu aktif */}
                           <h1 className="text-2xl font-bold text-slate-800">{menuTitles[activeMenu]}</h1>
                      </div>
                      <div className="flex items-center">
@@ -455,16 +260,16 @@ const MahasiswaDashboard = () => {
                           </div>
                      </div>
                  </header>
-                 {/* Latar belakang main content diubah agar lebih kontras dengan kartu */}
+                 
                  <div className="p-6 md:p-8 bg-slate-100"> 
-                      {/* Konten dinamis berdasarkan menu aktif */}
                       {activeMenu === 'dashboard' && <DashboardView user={user} setActiveMenu={setActiveMenu} />}
                       {activeMenu === 'profil' && <ProfilView user={user} navigate={navigate} />}
                       
-                      {/* --- [PERUBAHAN] Memanggil komponen yang diimpor --- */}
+                      {/* Komponen Proyek Akhir */}
                       {activeMenu === 'proyek' && <ProyekAkhirView user={user} navigate={navigate} allTitles={allTitles} />}
                       
-                      {activeMenu === 'tugas' && <TugasView user={user} navigate={navigate} />}
+                      {/* --- [PERUBAHAN] Menggunakan komponen MahasiswaTugas yang baru --- */}
+                      {activeMenu === 'tugas' && <MahasiswaTugas user={user} navigate={navigate} />}
                  </div>
             </main>
         </div>
