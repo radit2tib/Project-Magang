@@ -37,27 +37,34 @@ model Mahasiswa {
   fileLaporanKp     String?
   fileLaporanTa     String?
 
-  // --- [TAMBAHAN BARU] ---
-  // Ini adalah relasi ke tabel Tugas. 
-  // Satu mahasiswa bisa punya banyak tugas.
+  // --- [TAMBAHAN BARU: DETAIL NILAI KP] ---
+  nilaiKpMentor     Float?    // Float agar bisa desimal (contoh: 85.5)
+  nilaiKpPenguji    Float?
+  nilaiKpAkhir      Float?
+  komenKp           String?
+
+  // --- [TAMBAHAN BARU: DETAIL NILAI TA] ---
+  nilaiTaMentor     Float?
+  nilaiTaPenguji    Float?
+  nilaiTaAkhir      Float?
+  komenTa           String?
+
+  // Relasi ke tabel Tugas Mingguan
   daftarTugas       Tugas[]
 }
 
-// --- [MODEL BARU] ---
 model Tugas {
   id              Int       @id @default(autoincrement())
   taskNumber      String    
-  
   judulTugas      String
   
-  nilai           Int?
+  nilai           Int?      // Nilai tugas mingguan
   fileLaporan     String    
-  filePresentasi  String?   // Opsional (bisa null)
+  filePresentasi  String?   
   
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  // Relasi balik ke Mahasiswa
   nim_mahasiswa   String
   mahasiswa       Mahasiswa @relation(fields: [nim_mahasiswa], references: [nim], onDelete: Cascade)
 

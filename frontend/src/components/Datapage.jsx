@@ -99,7 +99,7 @@ const DataHeader = ({ onAddData, onDownloadData }) => (
   </div>
 );
 
-// --- Komponen Tabel Data (Dengan Tombol Info) ---
+// --- Komponen Tabel Data (DENGAN MENTOR & CO-MENTOR) ---
 const DataTable = ({ documents, onInfo, onEdit, onDelete }) => (
   <div className="overflow-x-auto bg-white rounded-lg shadow-sm">
     <table className="min-w-full divide-y divide-slate-200">
@@ -110,6 +110,8 @@ const DataTable = ({ documents, onInfo, onEdit, onDelete }) => (
             "Nama",
             "Angkatan",
             "BU",
+            "Mentor",      // Penambahan Kolom Mentor
+            "Co-Mentor",   // Penambahan Kolom Co-Mentor
             "Scholar",
             "Jenis Kelamin",
             "English",
@@ -136,6 +138,12 @@ const DataTable = ({ documents, onInfo, onEdit, onDelete }) => (
               <td className="px-4 py-3 text-sm font-semibold text-slate-800">{doc.nama}</td>
               <td className="px-4 py-3 text-sm text-slate-500">{doc.angkatan}</td>
               <td className="px-4 py-3 text-sm text-slate-500">{doc.bu || "-"}</td>
+              
+              {/* --- Penambahan Data Mentor & Co-Mentor --- */}
+              <td className="px-4 py-3 text-sm text-slate-500">{doc.mentor || "-"}</td>
+              <td className="px-4 py-3 text-sm text-slate-500">{doc.co_mentor || "-"}</td>
+              {/* ------------------------------------------ */}
+
               <td className="px-4 py-3 text-sm text-slate-500">{doc.scholar || "-"}</td>
               <td className="px-4 py-3 text-sm text-slate-500">{doc.jenisKelamin || "-"}</td>
               <td className="px-4 py-3 text-sm text-slate-500">{doc.english || "-"}</td>
@@ -179,7 +187,7 @@ const DataTable = ({ documents, onInfo, onEdit, onDelete }) => (
           ))
         ) : (
           <tr>
-            <td colSpan="10" className="text-center py-10 text-slate-500">
+            <td colSpan="12" className="text-center py-10 text-slate-500"> {/* Colspan disesuaikan dengan jumlah kolom baru */}
               Tidak ada data ditemukan.
             </td>
           </tr>
@@ -632,8 +640,22 @@ const DataPage = () => {
     const wsData = [
       [fileTitle],
       [],
-      [ "NIM", "Nama", "Angkatan", "BU", "Scholar", "Jenis Kelamin", "English", "Pakai Kacamata", "Riwayat Penyakit", ],
-      ...filteredData.map((doc) => [ doc.nim || "", doc.nama || "", doc.angkatan || "", doc.bu || "", doc.scholar || "", doc.jenisKelamin || "", doc.english || "", doc.pakaiKacamata || "", doc.riwayatPenyakit || "", ]),
+      // [UPDATE HEADER EXCEL] Tambahkan Mentor dan Co-Mentor
+      [ "NIM", "Nama", "Angkatan", "BU", "Mentor", "Co-Mentor", "Scholar", "Jenis Kelamin", "English", "Pakai Kacamata", "Riwayat Penyakit", ],
+      ...filteredData.map((doc) => [ 
+        doc.nim || "", 
+        doc.nama || "", 
+        doc.angkatan || "", 
+        doc.bu || "", 
+        // [UPDATE ISI EXCEL] Tambahkan data Mentor dan Co-Mentor
+        doc.mentor || "",
+        doc.co_mentor || "",
+        doc.scholar || "", 
+        doc.jenisKelamin || "", 
+        doc.english || "", 
+        doc.pakaiKacamata || "", 
+        doc.riwayatPenyakit || "", 
+      ]),
     ];
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     const colWidths = wsData[2].map(

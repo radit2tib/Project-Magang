@@ -1,16 +1,15 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
-import fs from 'fs'; // Wajib ada untuk hapus file jika error
+import fs from 'fs'; 
 
 const prisma = new PrismaClient();
 
 // =======================================================
-// A. FUNGSI UPLOAD (DENGAN DEBUG LOG)
+// A. FUNGSI UPLOAD (KP, TA, TUGAS) - Tetap Ada
 // =======================================================
 
 // --- 1. UPLOAD PROYEK AKHIR (KP & TA) ---
 export const uploadProyekFiles = async (req, res) => {
-    console.log("\n>>> [DEBUG] Masuk ke uploadProyekFiles");
     const nim = req.user.nim;
 
     if (!req.files || Object.keys(req.files).length === 0) {
@@ -18,8 +17,6 @@ export const uploadProyekFiles = async (req, res) => {
     }
 
     const dataToUpdate = {};
-    
-    // Normalisasi Path (Ganti backslash Windows '\' jadi '/')
     if (req.files['fileLaporanKP']) {
         dataToUpdate.fileLaporanKp = req.files['fileLaporanKP'][0].path.replace(/\\/g, "/");
     }
@@ -32,7 +29,6 @@ export const uploadProyekFiles = async (req, res) => {
             where: { nim: nim },
             data: dataToUpdate
         });
-        console.log(">>> [SUCCESS] Proyek Berhasil Diupload");
         res.status(200).json({ message: "File proyek berhasil diupload." });
     } catch (error) {
         console.error(">>> [ERROR] Upload Proyek:", error);
@@ -42,40 +38,28 @@ export const uploadProyekFiles = async (req, res) => {
 
 // --- 2. UPLOAD TUGAS MINGGUAN ---
 export const uploadTugasFile = async (req, res) => {
-    console.log("\n============================================");
-    console.log(">>> [DEBUG] START uploadTugasFile");
-    
     const nim = req.user.nim;
     const { taskNumber, judulTugas } = req.body;
 
-    // Log Debug
-    console.log("User:", nim);
-    console.log("Body:", req.body);
-
-    // 1. VALIDASI INPUT TEKS
     if (!taskNumber || !judulTugas) {
-        // Hapus file jika terlanjur upload tapi data teks salah
         if (req.files?.fileLaporan) fs.unlinkSync(req.files['fileLaporan'][0].path);
         if (req.files?.filePresentasi) fs.unlinkSync(req.files['filePresentasi'][0].path);
         return res.status(400).json({ message: "Nomor tugas dan Judul wajib diisi." });
     }
 
-    // 2. VALIDASI FILE WAJIB
     if (!req.files || !req.files['fileLaporan']) {
          if (req.files?.filePresentasi) fs.unlinkSync(req.files['filePresentasi'][0].path);
          return res.status(400).json({ message: "File Laporan (PDF/Doc) wajib diupload." });
     }
 
-    // 3. SIAPKAN PATH FILE
     const pathLaporan = req.files['fileLaporan'][0].path.replace(/\\/g, "/");
     let pathPresentasi = null;
     if (req.files['filePresentasi']) {
         pathPresentasi = req.files['filePresentasi'][0].path.replace(/\\/g, "/");
     }
 
-    // 4. SIMPAN KE DATABASE (UPSERT)
     try {
-        const result = await prisma.tugas.upsert({
+        await prisma.tugas.upsert({
             where: {
                 nim_mahasiswa_taskNumber: {
                     nim_mahasiswa: nim,
@@ -96,43 +80,31 @@ export const uploadTugasFile = async (req, res) => {
                 filePresentasi: pathPresentasi
             }
         });
-
-        console.log(">>> [SUCCESS] Data Tersimpan:", result);
         res.status(200).json({ message: `Tugas ${taskNumber} berhasil diupload.` });
-
     } catch (error) {
          console.error(">>> [ERROR] Prisma Upsert Gagal:", error);
-         // Bersihkan file sampah
          if (fs.existsSync(pathLaporan)) fs.unlinkSync(pathLaporan);
          if (pathPresentasi && fs.existsSync(pathPresentasi)) fs.unlinkSync(pathPresentasi);
          res.status(500).json({ message: "Gagal menyimpan tugas ke database." });
     }
 };
 
-
 // =======================================================
-// B. FUNGSI KHUSUS ADMIN (PENILAIAN)
+// B. FUNGSI KHUSUS ADMIN
 // =======================================================
 
-// --- 1. AMBIL DATA UTUH (Mahasiswa + Tugas) ---
 export const getAllPenugasan = async (req, res) => {
     try {
         const data = await prisma.mahasiswa.findMany({
             orderBy: { nama: 'asc' },
             include: {
-                // PENTING: Sertakan data tugas agar Admin bisa lihat
-                daftarTugas: {
-                    orderBy: { taskNumber: 'asc' }
-                }
+                daftarTugas: { orderBy: { taskNumber: 'asc' } }
             }
         });
-
-        // Hapus password sebelum dikirim
         const safeData = data.map(mhs => {
             const { password, ...rest } = mhs;
             return rest;
         });
-
         res.status(200).json(safeData);
     } catch (error) {
         console.error("Error getAllPenugasan:", error);
@@ -140,66 +112,83 @@ export const getAllPenugasan = async (req, res) => {
     }
 };
 
-// --- 2. UPDATE NILAI TUGAS ---
 export const gradeTugas = async (req, res) => {
     const { nim, taskNumber, nilai } = req.body;
-
     if (!nim || !taskNumber || nilai === undefined) {
         return res.status(400).json({ message: "Data penilaian tidak lengkap." });
     }
-
     try {
         const updatedTugas = await prisma.tugas.update({
             where: {
-                nim_mahasiswa_taskNumber: {
-                    nim_mahasiswa: nim,
-                    taskNumber: taskNumber
-                }
+                nim_mahasiswa_taskNumber: { nim_mahasiswa: nim, taskNumber: taskNumber }
             },
-            data: {
-                nilai: parseInt(nilai, 10) // Pastikan Integer
-            }
+            data: { nilai: parseInt(nilai, 10) }
         });
-
         res.status(200).json({ message: "Nilai berhasil disimpan.", data: updatedTugas });
-
     } catch (error) {
-        console.error("Error gradeTugas:", error);
-        if (error.code === 'P2025') {
-            return res.status(404).json({ message: "Tugas belum diupload, tidak bisa dinilai." });
-        }
+        if (error.code === 'P2025') return res.status(404).json({ message: "Tugas belum diupload." });
         res.status(500).json({ message: "Gagal menyimpan nilai." });
     }
 };
 
+export const updatePenilaianAkhir = async (req, res) => {
+    const { nim, type, nilaiMentor, nilaiPenguji, nilaiAkhir, komen } = req.body;
+    if (!nim || !type) return res.status(400).json({ message: "NIM dan Tipe Penilaian wajib ada." });
+
+    let dataToUpdate = {};
+    if (type === 'KP') {
+        dataToUpdate = {
+            nilaiKpMentor: parseFloat(nilaiMentor),
+            nilaiKpPenguji: parseFloat(nilaiPenguji),
+            nilaiKpAkhir: parseFloat(nilaiAkhir),
+            komenKp: komen
+        };
+    } else if (type === 'TA') {
+        dataToUpdate = {
+            nilaiTaMentor: parseFloat(nilaiMentor),
+            nilaiTaPenguji: parseFloat(nilaiPenguji),
+            nilaiTaAkhir: parseFloat(nilaiAkhir),
+            komenTa: komen
+        };
+    } else {
+        return res.status(400).json({ message: "Tipe penilaian harus 'KP' atau 'TA'." });
+    }
+
+    try {
+        await prisma.mahasiswa.update({ where: { nim: nim }, data: dataToUpdate });
+        res.status(200).json({ message: `Penilaian ${type} berhasil disimpan.` });
+    } catch (error) {
+        if (error.code === 'P2025') return res.status(404).json({ message: "Mahasiswa tidak ditemukan." });
+        res.status(500).json({ message: "Gagal menyimpan penilaian." });
+    }
+};
 
 // =======================================================
-// C. FUNGSI CRUD STANDAR & PROFIL
+// C. FUNGSI PROFIL & CRUD (BAGIAN YANG DIPERBAIKI)
 // =======================================================
 
-// --- GET PROFILE (PENTING: INCLUDE TUGAS UNTUK FRONTEND) ---
+// --- GET PROFILE (TANPA FOTO PROFIL) ---
 export const getMahasiswaProfile = async (req, res) => {
     try {
         const nimDariToken = req.user.nim;
         const mahasiswa = await prisma.mahasiswa.findUnique({
             where: { nim: nimDariToken },
             select: {
-                // Pilih field manual untuk kontrol penuh
                 nim: true, nama: true, angkatan: true, bu: true, dept: true,
-                judulKp: true, judulTa: true, 
+                judulKp: true, judulTa: true,
+                // fotoProfil: true, <--- SUDAH DIHAPUS
                 fileLaporanKp: true, fileLaporanTa: true,
                 pakaiKacamata: true, riwayatPenyakit: true, scholar: true,
                 english: true, isProfileComplete: true, jenisKelamin: true,
                 
-                // [CRITICAL] Sertakan Tugas agar Frontend bisa cek status Lock/Verified
+                nilaiKpMentor: true, nilaiKpPenguji: true, nilaiKpAkhir: true, komenKp: true,
+                nilaiTaMentor: true, nilaiTaPenguji: true, nilaiTaAkhir: true, komenTa: true,
+
                 daftarTugas: {
                     orderBy: { taskNumber: 'asc' },
                     select: {
-                        taskNumber: true,
-                        judulTugas: true,
-                        fileLaporan: true,
-                        filePresentasi: true,
-                        nilai: true // Frontend butuh ini untuk cek "isGraded"
+                        taskNumber: true, judulTugas: true, fileLaporan: true,
+                        filePresentasi: true, nilai: true 
                     }
                 }
             }
@@ -213,29 +202,66 @@ export const getMahasiswaProfile = async (req, res) => {
     }
 };
 
-// --- UPDATE PROFILE ---
+// --- UPDATE PROFILE (TANPA LOGIKA UPLOAD FOTO) ---
 export const updateMahasiswaProfile = async (req, res) => {
-    const nim = req.user.nim;
-    let dataToUpdate = req.body; 
-    delete dataToUpdate.password; 
-    delete dataToUpdate.fileLaporanKp;
-    delete dataToUpdate.fileLaporanTa;
-
-    if (dataToUpdate.pakaiKacamata !== undefined) dataToUpdate.pakaiKacamata = (String(dataToUpdate.pakaiKacamata) === 'true');
-    
     try {
+        if (!req.user || !req.user.nim) {
+            return res.status(401).json({ message: "Unauthorized: User tidak valid." });
+        }
+        const nim = req.user.nim;
+
+        // KITA ABAIKAN REQ.FILE DISINI KARENA TIDAK DISIMPAN KE DB
+
+        const { 
+            nama, angkatan, bu, dept, 
+            pakaiKacamata, riwayatPenyakit, scholar, english, jenisKelamin,
+            judulKp, judulTa
+        } = req.body;
+
+        const dataToUpdate = {};
+
+        // Masukkan Data Teks Saja
+        if (nama) dataToUpdate.nama = nama;
+        if (bu) dataToUpdate.bu = bu;
+        if (dept) dataToUpdate.dept = dept;
+        if (riwayatPenyakit) dataToUpdate.riwayatPenyakit = riwayatPenyakit;
+        if (scholar) dataToUpdate.scholar = scholar;
+        if (english) dataToUpdate.english = english;
+        if (jenisKelamin) dataToUpdate.jenisKelamin = jenisKelamin;
+        if (judulKp) dataToUpdate.judulKp = judulKp;
+        if (judulTa) dataToUpdate.judulTa = judulTa;
+
+        // Konversi Tipe Data (Wajib karena FormData mengirim String)
+        if (angkatan) {
+            const parsedAngkatan = parseInt(angkatan, 10);
+            if (!isNaN(parsedAngkatan)) dataToUpdate.angkatan = parsedAngkatan;
+        }
+
+        if (pakaiKacamata !== undefined) {
+            dataToUpdate.pakaiKacamata = (String(pakaiKacamata) === 'true');
+        }
+
+        dataToUpdate.isProfileComplete = true;
+
+        console.log(">>> [DEBUG] Update Profile Data (No Foto):", dataToUpdate);
+
         await prisma.mahasiswa.update({
             where: { nim: nim },
-            data: { ...dataToUpdate, isProfileComplete: true }
+            data: dataToUpdate
         });
-        res.status(200).json({ message: "Profil diperbarui." });
+
+        res.status(200).json({ message: "Profil berhasil diperbarui." });
+
     } catch (error) {
-        console.error("Error update profile:", error);
-        res.status(500).json({ message: "Server error." });
+        console.error(">>> [ERROR] Update Profile:", error);
+        if (error.code === 'P2002') {
+            return res.status(409).json({ message: "Data unik duplikat." });
+        }
+        res.status(500).json({ message: "Gagal update profil." });
     }
 };
 
-// --- CRUD ADMIN (GET ALL, CREATE, UPDATE, DELETE) ---
+// --- CRUD ADMIN ---
 export const getAllMahasiswa = async (req, res) => {
   try {
     const allMahasiswa = await prisma.mahasiswa.findMany({ orderBy: { nama: 'asc' } });
@@ -249,7 +275,7 @@ export const createMahasiswa = async (req, res) => {
     try {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-        const newMahasiswa = await prisma.mahasiswa.create({
+        await prisma.mahasiswa.create({
             data: { nim, nama, password: hashedPassword, angkatan: parseInt(angkatan), bu, dept }
         });
         res.status(201).json({ message: "Mahasiswa dibuat." });

@@ -4,18 +4,20 @@ import axios from 'axios';
 import aprilLogo from '../assets/icons/april.png';
 
 // --- [PENTING] Tentukan API_URL di sini ---
-// Gunakan URL tunnel publik port 8000 Anda
 const API_URL = 'http://localhost:8000'; 
-// (Pastikan URL ini sama dengan yang ada di VS Code "PORTS" Anda)
-
 
 const MahasiswaProfileForm = () => {
     const [formData, setFormData] = useState({
         bu: '',
         dept: '',
+        // --- DATA BARU ---
+        mentor: '',
+        co_mentor: '',
+        // ----------------
         pakaiKacamata: false,
         riwayatPenyakit: '',
         scholar: '',
+        english: '',
         judulKp: '',
         judulTa: ''
     });
@@ -28,8 +30,6 @@ const MahasiswaProfileForm = () => {
         const fetchCurrentData = async () => {
             try {
                 const token = localStorage.getItem('mahasiswaAuthToken');
-                
-                // --- [PERBAIKAN 1] Menggunakan API_URL ---
                 const response = await axios.get(`${API_URL}/mahasiswa/profile`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -37,9 +37,14 @@ const MahasiswaProfileForm = () => {
                 setFormData({
                     bu: data.bu || '',
                     dept: data.dept || '',
+                    // --- ISI DATA BARU DARI DATABASE ---
+                    mentor: data.mentor || '',
+                    co_mentor: data.co_mentor || '',
+                    // -----------------------------------
                     pakaiKacamata: data.pakaiKacamata || false,
                     riwayatPenyakit: data.riwayatPenyakit || '',
                     scholar: data.scholar || '',
+                    english: data.english || '', 
                     judulKp: data.judulKp || '',
                     judulTa: data.judulTa || ''
                 });
@@ -67,8 +72,6 @@ const MahasiswaProfileForm = () => {
         setSuccess('');
         try {
             const token = localStorage.getItem('mahasiswaAuthToken');
-            
-            // --- [PERBAIKAN 2] Menggunakan API_URL dan method PUT ---
             await axios.put(`${API_URL}/mahasiswa/profile`, formData, { 
                 headers: { Authorization: `Bearer ${token}` }
             })
@@ -81,65 +84,108 @@ const MahasiswaProfileForm = () => {
         }
     };
 
-    if (loading && !formData.bu) { // Show loading only on initial fetch
-        return <div className="flex items-center justify-center h-screen bg-slate-50"><p>Loading form...</p></div>;
+    if (loading && !formData.bu) { 
+        return <div className="flex items-center justify-center h-screen bg-slate-50"><p className="text-lg font-semibold animate-pulse">Memuat formulir...</p></div>;
     }
 
     return (
         <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4" style={{ fontFamily: "'Inter', sans-serif" }}>
-            <div className="max-w-2xl w-full mx-auto">
+            <div className="max-w-3xl w-full mx-auto animate-fade-in">
                 <div className="text-center mb-8">
-                    <img src={aprilLogo} alt="Logo APRIL" className="h-16 mx-auto" />
+                    <img src={aprilLogo} alt="Logo APRIL" className="h-14 mx-auto mb-4" onError={(e) => e.target.src="https://placehold.co/150x50/00966C/FFFFFF?text=APRIL"} />
+                    <h1 className="text-3xl font-bold text-slate-800">Lengkapi Profil Anda</h1>
+                    <p className="text-slate-500 mt-2">Silakan isi atau perbarui informasi magang Anda di bawah ini.</p>
                 </div>
-                <div className="bg-white p-8 rounded-2xl shadow-lg">
-                    <h1 className="text-3xl font-bold text-slate-800 mb-2">Lengkapi Profil Anda</h1>
-                    <p className="text-slate-500 mb-6">Silakan isi atau perbarui informasi di bawah ini.</p>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* BU & Departemen */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block font-semibold text-gray-700 mb-1">Business Unit (BU)</label>
-                                <input type="text" name="bu" value={formData.bu} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg" />
-                            </div>
-                            <div>
-                                <label className="block font-semibold text-gray-700 mb-1">Departemen</label>
-                                <input type="text" name="dept" value={formData.dept} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg" />
+
+                <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        
+                        {/* BAGIAN 1: Informasi Penempatan */}
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-700 mb-4 border-b pb-2">Informasi Penempatan</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block font-semibold text-slate-600 mb-1 text-sm">Business Unit (BU)</label>
+                                    <input type="text" name="bu" value={formData.bu} onChange={handleChange} className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Contoh: RAPP" />
+                                </div>
+                                <div>
+                                    <label className="block font-semibold text-slate-600 mb-1 text-sm">Departemen</label>
+                                    <input type="text" name="dept" value={formData.dept} onChange={handleChange} className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Contoh: IT Department" />
+                                </div>
+                                
+                                {/* --- INPUT MENTOR & CO-MENTOR BARU --- */}
+                                <div>
+                                    <label className="block font-semibold text-slate-600 mb-1 text-sm">Mentor</label>
+                                    <input type="text" name="mentor" value={formData.mentor} onChange={handleChange} className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Nama Mentor Anda" />
+                                </div>
+                                <div>
+                                    <label className="block font-semibold text-slate-600 mb-1 text-sm">Co-Mentor (Opsional)</label>
+                                    <input type="text" name="co_mentor" value={formData.co_mentor} onChange={handleChange} className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Nama Co-Mentor" />
+                                </div>
+                                {/* ------------------------------------- */}
                             </div>
                         </div>
 
-                        {/* Info Tambahan */}
+                        {/* BAGIAN 2: Informasi Tambahan */}
                         <div>
-                            <label className="block font-semibold text-gray-700 mb-1">Scholar</label>
-                            <input type="text" name="scholar" value={formData.scholar} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg" />
-                        </div>
-                        <div>
-                            <label className="block font-semibold text-gray-700 mb-1">Riwayat Penyakit Tertentu (jika ada)</label>
-                            <input type="text" name="riwayatPenyakit" value={formData.riwayatPenyakit} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg" />
-                        </div>
-                        <div className="flex items-center">
-                            <input type="checkbox" name="pakaiKacamata" checked={formData.pakaiKacamata} onChange={handleChange} className="h-5 w-5 text-blue-600 border-gray-300 rounded" />
-                            <label className="ml-2 font-semibold text-gray-700">Apakah Anda memakai kacamata?</label>
+                            <h3 className="text-lg font-bold text-slate-700 mb-4 border-b pb-2">Informasi Tambahan</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block font-semibold text-slate-600 mb-1 text-sm">Jenis Beasiswa (Scholar)</label>
+                                    <input type="text" name="scholar" value={formData.scholar} onChange={handleChange} className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Contoh: Tanoto, Djarum" />
+                                </div>
+                                <div>
+                                    <label className="block font-semibold text-slate-600 mb-1 text-sm">Skor Bahasa Inggris (TOEFL/IELTS)</label>
+                                    <input type="text" name="english" value={formData.english} onChange={handleChange} className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Contoh: 550 / 6.5" />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="block font-semibold text-slate-600 mb-1 text-sm">Riwayat Penyakit (jika ada)</label>
+                                    <input type="text" name="riwayatPenyakit" value={formData.riwayatPenyakit} onChange={handleChange} className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Tulis '-' jika tidak ada" />
+                                </div>
+                                <div className="flex items-center md:col-span-2 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                    <input type="checkbox" id="kacamata" name="pakaiKacamata" checked={formData.pakaiKacamata} onChange={handleChange} className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                                    <label htmlFor="kacamata" className="ml-3 font-medium text-slate-700 text-sm cursor-pointer">Saya menggunakan kacamata</label>
+                                </div>
+                            </div>
                         </div>
                         
-                        <hr className="my-6" />
+                        {/* BAGIAN 3: Proyek Akhir */}
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-700 mb-4 border-b pb-2">Proyek Akhir</h3>
+                            <p className="text-slate-500 text-xs mb-4 italic">*Anda bisa mengisi bagian ini nanti jika judul belum ditentukan.</p>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block font-semibold text-slate-600 mb-1 text-sm">Judul Kerja Praktik (KP)</label>
+                                    <textarea name="judulKp" value={formData.judulKp} onChange={handleChange} rows="2" className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Judul laporan KP Anda..."></textarea>
+                                </div>
+                                <div>
+                                    <label className="block font-semibold text-slate-600 mb-1 text-sm">Judul Tugas Akhir (TA)</label>
+                                    <textarea name="judulTa" value={formData.judulTa} onChange={handleChange} rows="2" className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Judul skripsi atau TA Anda..."></textarea>
+                                </div>
+                            </div>
+                        </div>
 
-                        {/* Judul KP & TA */}
-                        <p className="text-slate-600 text-sm">Anda bisa mengisi judul KP dan TA sekarang atau memperbaruinya nanti.</p>
-                         <div>
-                            <label className="block font-semibold text-gray-700 mb-1">Judul Kerja Praktik (KP)</label>
-                            <textarea name="judulKp" value={formData.judulKp} onChange={handleChange} rows="2" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg"></textarea>
-                        </div>
-                        <div>
-                            <label className="block font-semibold text-gray-700 mb-1">Judul Tugas Akhir (TA)</label>
-                            <textarea name="judulTa" value={formData.judulTa} onChange={handleChange} rows="2" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg"></textarea>
-                        </div>
-                        
                         {/* Tombol & Pesan */}
-                        <div className="pt-4">
-                            {error && <p className="text-red-500 text-sm text-center mb-4">{error}</p>}
-                            {success && <p className="text-green-500 text-sm text-center mb-4">{success}</p>}
-                            <button type="submit" disabled={loading} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 font-semibold disabled:bg-slate-400">
-                                {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
+                        <div className="pt-6 border-t border-slate-200">
+                            {error && (
+                                <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm font-medium flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 mr-2"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                                    {error}
+                                </div>
+                            )}
+                            {success && (
+                                <div className="bg-green-50 text-green-600 p-3 rounded-lg mb-4 text-sm font-medium flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 mr-2"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                                    {success}
+                                </div>
+                            )}
+                            <button type="submit" disabled={loading} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 font-bold transition-transform transform hover:scale-[1.02] disabled:bg-slate-400 disabled:transform-none">
+                                {loading ? (
+                                    <span className="flex items-center">
+                                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        Menyimpan...
+                                    </span>
+                                ) : 'Simpan Perubahan'}
                             </button>
                         </div>
                     </form>

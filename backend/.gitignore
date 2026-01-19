@@ -1,4 +1,13 @@
-node_modules
-# Keep environment variables out of version control
+# Abaikan folder node_modules (Wajib)
+node_modules/
+*/node_modules/
+
+# Abaikan file environment (Wajib)
 .env
-request.rest
+.DS_Store
+
+# --- TAMBAHAN PENTING ---
+# Abaikan folder uploads (Data user jangan di-upload)
+backend/uploads/
+frontend/dist/
+frontend/build/

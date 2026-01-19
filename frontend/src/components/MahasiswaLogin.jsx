@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom'; // Import Link
+import { useNavigate, Link } from 'react-router-dom';
 import aprilLogo from '../assets/icons/april.png';
 
-// --- [PENTING] Tentukan API_URL di sini ---
-// Gunakan URL tunnel publik port 8000 Anda
+// Pastikan API_URL sesuai dengan backend
 const API_URL = 'http://localhost:8000'; 
-// (Pastikan URL ini sama dengan yang ada di VS Code "PORTS" Anda)
-
 
 const MahasiswaLogin = () => {
     const [nim, setNim] = useState('');
@@ -22,16 +19,19 @@ const MahasiswaLogin = () => {
         setError('');
 
         try {
-            // 1. [PERBAIKAN] Mengirim data ke URL tunnel, bukan localhost
             const response = await axios.post(`${API_URL}/login/mahasiswa`, {
                 nim,
                 password,
             });
             
-            // 2. Jika berhasil, simpan token yang diterima
-            localStorage.setItem('mahasiswaAuthToken', response.data.token);
+            // --- [PERBAIKAN UTAMA DI SINI] ---
+            // 1. Simpan token dengan nama standar 'token'
+            localStorage.setItem('token', response.data.token);
+            
+            // 2. WAJIB: Simpan role sebagai 'mahasiswa'
+            localStorage.setItem('role', 'mahasiswa');
 
-            // 3. Arahkan pengguna berdasarkan status kelengkapan profilnya
+            // 3. Arahkan pengguna
             if (response.data.isProfileComplete) {
                 navigate('/mahasiswa/dashboard');
             } else {
@@ -39,8 +39,7 @@ const MahasiswaLogin = () => {
             }
 
         } catch (err) {
-            // 4. Tangani jika terjadi error (misal: password salah atau server mati)
-            const message = err.response?.data?.msg || 'Koneksi ke server gagal. Pastikan server backend berjalan.';
+            const message = err.response?.data?.msg || 'Login gagal. Cek NIM/Password atau koneksi server.';
             setError(message);
         } finally {
             setIsLoading(false);
@@ -103,15 +102,12 @@ const MahasiswaLogin = () => {
                         </div>
                     </form>
 
-                    {/* --- TAMBAHAN BARU --- */}
                     <p className="text-center text-sm text-slate-600 mt-6">
                         Belum punya akun?{' '}
                         <Link to="/mahasiswa/register" className="font-semibold text-blue-600 hover:text-blue-700 hover:underline">
                             Daftar di sini
                         </Link>
                     </p>
-                    {/* --- AKHIR TAMBAHAN --- */}
-                    
                 </div>
             </div>
         </div>

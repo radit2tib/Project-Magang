@@ -3,12 +3,8 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import aprilLogo from '../assets/icons/april.png';
 
-// --- [PENTING] Tentukan API_URL di sini ---
-// Gunakan URL tunnel publik port 8000 Anda
-const API_URL = 'https://q576mhww-8000.asse.devtunnels.ms'; 
-// (Pastikan URL ini sama dengan yang ada di VS Code "PORTS" Anda)
+const API_URL = 'http://localhost:8000'; 
 
-// Komponen Ikon SVG untuk digunakan kembali
 const Icon = ({ path, className = "w-5 h-5" }) => (
     <svg className={className} fill="currentColor" viewBox="0 0 20 20">
         <path fillRule="evenodd" d={path} clipRule="evenodd" />
@@ -28,21 +24,25 @@ const AdminLogin = () => {
         setError('');
 
         try {
-            // --- [PERBAIKAN] Menggunakan API_URL dinamis ---
             const response = await axios.post(`${API_URL}/login/admin`, {
                 email,
                 password,
             });
 
-            // Simpan token dengan nama kunci yang unik untuk admin
-            localStorage.setItem('adminAuthToken', response.data.token);
+            // --- [PERBAIKAN UTAMA DI SINI] ---
+            // 1. Simpan token dengan nama standar 'token'
+            localStorage.setItem('token', response.data.token);
+            
+            // 2. WAJIB: Simpan role sebagai 'admin'
+            localStorage.setItem('role', 'admin');
+            
             navigate('/admin/dashboard');
 
         } catch (err) {
             if (err.response && err.response.data && err.response.data.message) {
                 setError(err.response.data.message);
             } else {
-                setError('Koneksi ke server gagal. Pastikan server backend berjalan.');
+                setError('Login gagal. Pastikan server backend berjalan.');
             }
         } finally {
             setIsLoading(false);
