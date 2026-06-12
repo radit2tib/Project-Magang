@@ -16,6 +16,7 @@ const app = express();
 // 1. Buat daftar semua alamat frontend yang diizinkan
 const allowedOrigins = [
   'http://localhost:5173', 
+  'http://localhost:5174',
 ]
 
 // 2. Ubah 'origin' dari string menjadi fungsi dinamis
